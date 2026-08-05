@@ -3,8 +3,13 @@ node_modules
 .next
 .env
 .env.local
+apps/*/.env
+apps/*/.env.local
 coverage
 *.tsbuildinfo
+dist
+apps/api/generated
 *.log
+*.pid
 .DS_Store
 prisma/dev.db

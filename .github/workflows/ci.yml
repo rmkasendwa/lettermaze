@@ -10,6 +10,10 @@ jobs:
       DATABASE_URL: postgresql://lettermaze:lettermaze@localhost:5432/lettermaze
       NEXT_PUBLIC_APP_NAME: LetterMaze
       NEXT_PUBLIC_APP_URL: http://localhost:3000
+      NEXT_PUBLIC_API_URL: /api
+      INTERNAL_API_URL: http://127.0.0.1:4000
+      API_PORT: 4000
+      CORS_ORIGINS: http://localhost:3000
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -31,3 +35,4 @@ jobs:
       - run: pnpm format:check
       - run: pnpm test
       - run: pnpm build
+      - run: docker build -t lettermaze:test .

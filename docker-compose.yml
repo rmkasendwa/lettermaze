@@ -1,0 +1,40 @@
+services:
+  app:
+    profiles: [production]
+    build:
+      context: .
+    ports:
+      - "3000:3000"
+    environment:
+      PORT: 3000
+      API_PORT: 4000
+      INTERNAL_API_URL: http://127.0.0.1:4000
+      NEXT_PUBLIC_API_URL: /api
+      DATABASE_URL: postgresql://lettermaze:lettermaze@postgres:5432/lettermaze
+      CORS_ORIGINS: http://localhost:3000
+    depends_on:
+      postgres:
+        condition: service_healthy
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: lettermaze
+      POSTGRES_USER: lettermaze
+      POSTGRES_PASSWORD: lettermaze
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U lettermaze -d lettermaze"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+volumes:
+  postgres-data:
+
+networks:
+  default:
+    name: lettermaze-network
