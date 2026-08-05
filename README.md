@@ -36,7 +36,16 @@ PowerShell:
 Copy-Item .env.example .env
 ```
 
-The repository has one root `.env`, shared by Prisma, web, API, and production tooling. Web variables are `PORT` (default `3000`), `NEXT_PUBLIC_APP_NAME`, `NEXT_PUBLIC_APP_URL`, `NEXT_PUBLIC_API_URL` (normally `/api`), and server-only `INTERNAL_API_URL`. API variables are `API_PORT` (default `4000`), `DATABASE_URL`, and comma-separated `CORS_ORIGINS`.
+The repository has one root `.env`, shared by Prisma, web, API, Compose, and production tooling. Web variables are `PORT` (default `3000`), `NEXT_PUBLIC_APP_NAME`, `NEXT_PUBLIC_APP_URL`, `NEXT_PUBLIC_API_URL` (normally `/api`), and server-only `INTERNAL_API_URL`. API variables are `API_PORT` (default `3001`), `DATABASE_URL`, and comma-separated `CORS_ORIGINS`. `POSTGRES_PORT` controls the PostgreSQL port published on the development host.
+
+To avoid a local port conflict, change both the Compose host port and the matching connection URL:
+
+```dotenv
+POSTGRES_PORT=5433
+DATABASE_URL=postgresql://lettermaze:lettermaze@localhost:5433/lettermaze
+```
+
+PostgreSQL continues to listen on port `5432` inside the Docker network; only the host-facing development port changes.
 
 For local development, both applications fall back to the root `.env.example` when root `.env` is absent. Copy the example before changing any values. Production never relies on this fallback file.
 
@@ -54,9 +63,9 @@ pnpm dev
 Default addresses:
 
 - Web: `http://localhost:3000`
-- API: `http://localhost:4000`
+- API: `http://localhost:3001`
 - Proxied health endpoint: `http://localhost:3000/api/health`
-- Direct API health endpoint: `http://localhost:4000/api/health`
+- Direct API health endpoint: `http://localhost:3001/api/health`
 
 Run applications independently with `pnpm dev:web` and `pnpm dev:api`. Production builds use `pnpm build`; built applications can be run separately with `pnpm start:web` and `pnpm start:api`.
 

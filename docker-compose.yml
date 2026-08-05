@@ -7,8 +7,8 @@ services:
       - "3000:3000"
     environment:
       PORT: 3000
-      API_PORT: 4000
-      INTERNAL_API_URL: http://127.0.0.1:4000
+      API_PORT: 3001
+      INTERNAL_API_URL: http://127.0.0.1:3001
       NEXT_PUBLIC_API_URL: /api
       DATABASE_URL: postgresql://lettermaze:lettermaze@postgres:5432/lettermaze
       CORS_ORIGINS: http://localhost:3000
@@ -22,7 +22,7 @@ services:
       POSTGRES_USER: lettermaze
       POSTGRES_PASSWORD: lettermaze
     ports:
-      - "5432:5432"
+      - "${POSTGRES_PORT:-5432}:5432"
     volumes:
       - postgres-data:/var/lib/postgresql/data
     healthcheck:

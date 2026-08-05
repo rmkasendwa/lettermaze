@@ -17,13 +17,13 @@ ENV DATABASE_URL=postgresql://lettermaze:lettermaze@localhost:5432/lettermaze \
     NEXT_PUBLIC_APP_NAME=$NEXT_PUBLIC_APP_NAME \
     NEXT_PUBLIC_APP_URL=$NEXT_PUBLIC_APP_URL \
     NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL \
-    INTERNAL_API_URL=http://127.0.0.1:4000
+    INTERNAL_API_URL=http://127.0.0.1:3001
 RUN pnpm db:generate && pnpm build
 RUN pnpm --filter @lettermaze/api --prod deploy --legacy /prod/api
 
 FROM node:24-alpine AS runtime
 WORKDIR /app
-ENV NODE_ENV=production PORT=3000 API_PORT=4000 INTERNAL_API_URL=http://127.0.0.1:4000 NEXT_PUBLIC_API_URL=/api
+ENV NODE_ENV=production PORT=3000 API_PORT=3001 INTERNAL_API_URL=http://127.0.0.1:3001 NEXT_PUBLIC_API_URL=/api
 RUN addgroup --system --gid 1001 lettermaze && adduser --system --uid 1001 --ingroup lettermaze lettermaze
 COPY --from=build --chown=lettermaze:lettermaze /workspace/apps/web/.next/standalone ./apps/web/.next/standalone
 COPY --from=build --chown=lettermaze:lettermaze /workspace/apps/web/.next/static ./apps/web/.next/standalone/apps/web/.next/static

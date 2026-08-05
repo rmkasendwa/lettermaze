@@ -11,8 +11,8 @@ jobs:
       NEXT_PUBLIC_APP_NAME: LetterMaze
       NEXT_PUBLIC_APP_URL: http://localhost:3000
       NEXT_PUBLIC_API_URL: /api
-      INTERNAL_API_URL: http://127.0.0.1:4000
-      API_PORT: 4000
+      INTERNAL_API_URL: http://127.0.0.1:3001
+      API_PORT: 3001
       CORS_ORIGINS: http://localhost:3000
     steps:
       - uses: actions/checkout@v4

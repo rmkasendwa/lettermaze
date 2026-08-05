@@ -2,7 +2,7 @@ import { Injectable } from "@nestjs/common";
 import { z } from "zod";
 
 const environmentSchema = z.object({
-  API_PORT: z.coerce.number().int().min(1).max(65535).default(4000),
+  API_PORT: z.coerce.number().int().min(1).max(65535).default(3001),
   DATABASE_URL: z.string().min(1),
   CORS_ORIGINS: z.string().min(1),
   NODE_ENV: z

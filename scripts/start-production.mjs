@@ -2,7 +2,7 @@ import { spawn } from "node:child_process";
 import { fileURLToPath } from "node:url";
 
 const root = fileURLToPath(new URL("../", import.meta.url));
-const apiPort = process.env.API_PORT ?? "4000";
+const apiPort = process.env.API_PORT ?? "3001";
 const internalApiUrl = process.env.INTERNAL_API_URL;
 if (!internalApiUrl) throw new Error("INTERNAL_API_URL is required.");
 const apiEntry = fileURLToPath(
