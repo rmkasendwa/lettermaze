@@ -28,21 +28,17 @@ Next.js, React, NestJS, strict TypeScript, Tailwind CSS, PostgreSQL 17, Prisma, 
 corepack enable
 pnpm install
 cp .env.example .env
-cp apps/web/.env.example apps/web/.env
-cp apps/api/.env.example apps/api/.env
 ```
 
 PowerShell:
 
 ```powershell
 Copy-Item .env.example .env
-Copy-Item apps/web/.env.example apps/web/.env
-Copy-Item apps/api/.env.example apps/api/.env
 ```
 
-The root `.env` owns `DATABASE_URL` for Prisma commands. Web variables are `PORT` (default `3000`), `NEXT_PUBLIC_APP_NAME`, `NEXT_PUBLIC_APP_URL`, `NEXT_PUBLIC_API_URL` (normally `/api`), and server-only `INTERNAL_API_URL`. API variables are `API_PORT` (default `4000`), `DATABASE_URL`, and comma-separated `CORS_ORIGINS`.
+The repository has one root `.env`, shared by Prisma, web, API, and production tooling. Web variables are `PORT` (default `3000`), `NEXT_PUBLIC_APP_NAME`, `NEXT_PUBLIC_APP_URL`, `NEXT_PUBLIC_API_URL` (normally `/api`), and server-only `INTERNAL_API_URL`. API variables are `API_PORT` (default `4000`), `DATABASE_URL`, and comma-separated `CORS_ORIGINS`.
 
-For local development, each application falls back to its committed `.env.example` when its `.env` file is absent. Copying the examples is still recommended before changing any values. Production never relies on these fallback files.
+For local development, both applications fall back to the root `.env.example` when root `.env` is absent. Copy the example before changing any values. Production never relies on this fallback file.
 
 When changing the web port, update its public origin and API CORS allowlist. When changing the API port, update `INTERNAL_API_URL`.
 

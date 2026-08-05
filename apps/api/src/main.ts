@@ -1,14 +1,15 @@
 import "reflect-metadata";
 import { NestFactory } from "@nestjs/core";
+import { resolve } from "node:path";
 import { AppModule } from "./app.module";
 import { AppConfigService } from "./config/app-config.service";
 
 try {
-  process.loadEnvFile(".env");
+  process.loadEnvFile(resolve(process.cwd(), "../../.env"));
 } catch (error) {
   if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error;
   if (process.env.NODE_ENV !== "production") {
-    process.loadEnvFile(".env.example");
+    process.loadEnvFile(resolve(process.cwd(), "../../.env.example"));
   }
 }
 

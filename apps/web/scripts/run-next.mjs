@@ -1,11 +1,18 @@
 import { spawn } from "node:child_process";
 import { fileURLToPath } from "node:url";
 
+const rootEnvironment = fileURLToPath(
+  new URL("../../../.env", import.meta.url),
+);
+const rootEnvironmentExample = fileURLToPath(
+  new URL("../../../.env.example", import.meta.url),
+);
+
 try {
-  process.loadEnvFile(".env");
+  process.loadEnvFile(rootEnvironment);
 } catch (error) {
   if (error?.code !== "ENOENT") throw error;
-  process.loadEnvFile(".env.example");
+  process.loadEnvFile(rootEnvironmentExample);
 }
 
 const command = process.argv[2];
