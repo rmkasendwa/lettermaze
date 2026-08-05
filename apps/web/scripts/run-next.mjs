@@ -5,6 +5,7 @@ try {
   process.loadEnvFile(".env");
 } catch (error) {
   if (error?.code !== "ENOENT") throw error;
+  process.loadEnvFile(".env.example");
 }
 
 const command = process.argv[2];

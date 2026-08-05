@@ -42,6 +42,8 @@ Copy-Item apps/api/.env.example apps/api/.env
 
 The root `.env` owns `DATABASE_URL` for Prisma commands. Web variables are `PORT` (default `3000`), `NEXT_PUBLIC_APP_NAME`, `NEXT_PUBLIC_APP_URL`, `NEXT_PUBLIC_API_URL` (normally `/api`), and server-only `INTERNAL_API_URL`. API variables are `API_PORT` (default `4000`), `DATABASE_URL`, and comma-separated `CORS_ORIGINS`.
 
+For local development, each application falls back to its committed `.env.example` when its `.env` file is absent. Copying the examples is still recommended before changing any values. Production never relies on these fallback files.
+
 When changing the web port, update its public origin and API CORS allowlist. When changing the API port, update `INTERNAL_API_URL`.
 
 ## Local development

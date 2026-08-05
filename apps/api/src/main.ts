@@ -7,6 +7,9 @@ try {
   process.loadEnvFile(".env");
 } catch (error) {
   if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error;
+  if (process.env.NODE_ENV !== "production") {
+    process.loadEnvFile(".env.example");
+  }
 }
 
 async function bootstrap(): Promise<void> {
