@@ -1,0 +1,9 @@
+{
+  "name": "LetterMaze",
+  "short_name": "LetterMaze",
+  "description": "Find words, build streaks, and challenge yourself with LetterMaze.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f8fafc",
+  "theme_color": "#7c3aed"
+}
