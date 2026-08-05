@@ -28,6 +28,13 @@ pnpm dev
 
 PowerShell: `Copy-Item .env.example .env`.
 
+The development and production servers default to port `3000`. Set `PORT` in `.env` to use another port, and update `NEXT_PUBLIC_APP_URL` to match:
+
+```dotenv
+PORT=3100
+NEXT_PUBLIC_APP_URL=http://localhost:3100
+```
+
 ## Commands
 
 `dev`, `build`, and `start` run Next.js. `typecheck`, `lint`, `lint:fix`, `format`, `format:check`, `test`, and `test:watch` cover code quality. `db:generate`, `db:migrate`, `db:deploy`, `db:studio`, and `db:validate` manage Prisma. `validate` runs the main checks.
