@@ -7,7 +7,7 @@
   },
   "packageManager": "pnpm@11.9.0",
   "scripts": {
-    "dev": "pnpm build:contracts && concurrently --kill-others --names web,api \"pnpm dev:web\" \"pnpm dev:api\"",
+    "dev": "docker compose up -d postgres && pnpm db:deploy && pnpm build:contracts && concurrently --kill-others --names web,api \"pnpm dev:web\" \"pnpm dev:api\"",
     "dev:web": "pnpm --filter @lettermaze/web dev",
     "dev:api": "pnpm --filter @lettermaze/api dev",
     "build": "pnpm build:contracts && pnpm build:api && pnpm build:web",

@@ -54,11 +54,10 @@ When changing the web port, update its public origin and API CORS allowlist. Whe
 ## Local development
 
 ```bash
-docker compose up -d postgres
-pnpm db:generate
-pnpm db:migrate
 pnpm dev
 ```
+
+`pnpm dev` starts PostgreSQL through Docker Compose, applies committed migrations, and then launches the web and API development processes. It is the only command needed to start development after installation and environment setup. Prisma Client generation runs during dependency installation; use `pnpm db:generate` after changing the schema and `pnpm db:migrate` when authoring a new migration.
 
 Default addresses:
 
