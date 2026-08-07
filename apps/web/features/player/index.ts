@@ -1,6 +1,8 @@
 import type { StorageAdapter } from "@/lib/storage";
 
 export const PLAYER_STATISTICS_KEY = "lettermaze.player-statistics.v1";
+export const PLAYER_STATISTICS_IMPORT_KEY =
+  "lettermaze.player-statistics-import.v1";
 
 export interface PlayerStatistics {
   gamesPlayed: number;
@@ -31,6 +33,25 @@ function isPlayerStatistics(value: unknown): value is PlayerStatistics {
     Number.isFinite(stats.totalScore) &&
     typeof stats.longestWord === "string"
   );
+}
+
+export function mergePlayerStatistics(
+  local: PlayerStatistics,
+  remote: PlayerStatistics,
+): PlayerStatistics {
+  const gamesPlayed = local.gamesPlayed + remote.gamesPlayed;
+  const totalScore = local.totalScore + remote.totalScore;
+  return {
+    gamesPlayed,
+    totalWordsFound: local.totalWordsFound + remote.totalWordsFound,
+    highestScore: Math.max(local.highestScore, remote.highestScore),
+    longestWord:
+      local.longestWord.length > remote.longestWord.length
+        ? local.longestWord
+        : remote.longestWord,
+    totalScore,
+    averageScore: gamesPlayed ? totalScore / gamesPlayed : 0,
+  };
 }
 
 export function getPlayerStatistics(storage: StorageAdapter): PlayerStatistics {

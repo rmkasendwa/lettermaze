@@ -4,6 +4,7 @@ import {
   getPlayerStatistics,
   PLAYER_STATISTICS_KEY,
   recordCompletedGame,
+  mergePlayerStatistics,
 } from "@/features/player";
 
 describe("player statistics", () => {
@@ -33,5 +34,35 @@ describe("player statistics", () => {
   it("recovers safely from invalid persisted data", () => {
     localStorage.setItem(PLAYER_STATISTICS_KEY, JSON.stringify({ nope: true }));
     expect(getPlayerStatistics(browserStorage).gamesPlayed).toBe(0);
+  });
+
+  it("merges additive totals while keeping personal bests", () => {
+    expect(
+      mergePlayerStatistics(
+        {
+          gamesPlayed: 2,
+          totalWordsFound: 5,
+          highestScore: 20,
+          longestWord: "MAZE",
+          averageScore: 8,
+          totalScore: 16,
+        },
+        {
+          gamesPlayed: 3,
+          totalWordsFound: 9,
+          highestScore: 18,
+          longestWord: "LETTERS",
+          averageScore: 10,
+          totalScore: 30,
+        },
+      ),
+    ).toEqual({
+      gamesPlayed: 5,
+      totalWordsFound: 14,
+      highestScore: 20,
+      longestWord: "LETTERS",
+      averageScore: 9.2,
+      totalScore: 46,
+    });
   });
 });

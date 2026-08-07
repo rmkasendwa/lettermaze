@@ -3,6 +3,7 @@ import { routes } from "@/lib/routes";
 import { ThemeSelector } from "@/features/settings";
 import { AppNavigation } from "./AppNavigation";
 import { PageContainer } from "./PageContainer";
+import { AccountControls } from "@/features/account/AccountControls";
 
 export function AppHeader() {
   return (
@@ -15,7 +16,10 @@ export function AppHeader() {
           LetterMaze
         </Link>
         <AppNavigation />
-        <ThemeSelector compact />
+        <div className="flex items-center gap-2">
+          <AccountControls />
+          <ThemeSelector compact />
+        </div>
       </PageContainer>
     </header>
   );

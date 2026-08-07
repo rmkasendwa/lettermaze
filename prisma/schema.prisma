@@ -12,8 +12,43 @@ model User {
   id        String   @id @default(cuid())
   email     String?  @unique
   name      String?
+  passwordHash String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  sessions  Session[]
+  statistics PlayerStatistics?
+  statisticImports StatisticImport[]
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  tokenHash String   @unique
+  userId    String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+}
+
+model PlayerStatistics {
+  userId          String @id
+  gamesPlayed     Int    @default(0)
+  totalWordsFound Int    @default(0)
+  highestScore    Int    @default(0)
+  longestWord     String @default("")
+  totalScore      Int    @default(0)
+  user            User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model StatisticImport {
+  id        String   @id
+  userId    String
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
 }
 
 model DailyScore {
