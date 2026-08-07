@@ -9,6 +9,12 @@ import {
   type Letter,
   WordSubmissionTracker,
 } from "@lettermaze/game";
+import {
+  emptyPlayerStatistics,
+  recordCompletedGame,
+  type PlayerStatistics,
+} from "@/features/player";
+import { browserStorage } from "@/lib/storage";
 import { Board } from "./Board";
 
 export interface PlayGameProps {
@@ -48,8 +54,12 @@ export function PlayGame({
   const [remainingSeconds, setRemainingSeconds] = useState(duration);
   const [isPaused, setIsPaused] = useState(false);
   const [isGameOver, setIsGameOver] = useState(duration === 0);
+  const [playerStatistics, setPlayerStatistics] = useState<PlayerStatistics>(
+    emptyPlayerStatistics,
+  );
   const scoreRef = useRef(0);
   const wordsFoundRef = useRef(0);
+  const foundWordsRef = useRef<string[]>([]);
   const deadlineRef = useRef(0);
   const remainingMsRef = useRef(duration * 1000);
   const endedRef = useRef(false);
@@ -60,6 +70,12 @@ export function PlayGame({
     remainingMsRef.current = 0;
     setRemainingSeconds(0);
     setIsGameOver(true);
+    setPlayerStatistics(
+      recordCompletedGame(browserStorage, {
+        score: scoreRef.current,
+        words: foundWordsRef.current,
+      }),
+    );
     onGameEnd?.({ score: scoreRef.current, wordsFound: wordsFoundRef.current });
   }, [onGameEnd]);
 
@@ -67,6 +83,7 @@ export function PlayGame({
     submissions.current.reset();
     scoreRef.current = 0;
     wordsFoundRef.current = 0;
+    foundWordsRef.current = [];
     remainingMsRef.current = duration * 1000;
     deadlineRef.current = Date.now() + duration * 1000;
     endedRef.current = false;
@@ -116,6 +133,7 @@ export function PlayGame({
     const points = scoreWord(acceptedWord);
     scoreRef.current += points;
     wordsFoundRef.current = submissions.current.size;
+    foundWordsRef.current = [...foundWordsRef.current, acceptedWord];
     setScore(scoreRef.current);
     setWordsFound(wordsFoundRef.current);
     setFoundWords((words) => [...words, acceptedWord]);
@@ -174,6 +192,31 @@ export function PlayGame({
                 {longestWord || "—"}
               </p>
             </div>
+          </div>
+
+          <div>
+            <h3 className="font-bold">All-time statistics</h3>
+            <dl className="mt-2 grid grid-cols-2 gap-3 sm:grid-cols-3">
+              {[
+                ["Games played", playerStatistics.gamesPlayed],
+                ["Total words", playerStatistics.totalWordsFound],
+                ["Highest score", playerStatistics.highestScore],
+                ["Longest word", playerStatistics.longestWord || "—"],
+                ["Average score", playerStatistics.averageScore.toFixed(1)],
+              ].map(([label, value]) => (
+                <div
+                  className="rounded-xl bg-slate-100 p-3 dark:bg-slate-800"
+                  key={label}
+                >
+                  <dt className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                    {label}
+                  </dt>
+                  <dd className="mt-1 truncate text-xl font-bold tabular-nums uppercase">
+                    {value}
+                  </dd>
+                </div>
+              ))}
+            </dl>
           </div>
 
           <div>

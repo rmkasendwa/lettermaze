@@ -101,11 +101,21 @@ describe("PlayGame", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "Resume" }));
     act(() => vi.advanceTimersByTime(2000));
-    expect(screen.getByRole("heading", { name: "Game results" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { name: "Game results" }),
+    ).toBeInTheDocument();
     expect(screen.getByTestId("results-score")).toHaveTextContent("0");
     expect(screen.getByTestId("results-words-found")).toHaveTextContent("0");
     expect(screen.getByText("No words found this round.")).toBeInTheDocument();
-    expect(screen.getByRole("list", { name: "Missed words" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("list", { name: "Missed words" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText("Games played").nextElementSibling,
+    ).toHaveTextContent("1");
+    expect(
+      screen.getByText("Average score").nextElementSibling,
+    ).toHaveTextContent("0.0");
     expect(onGameEnd).toHaveBeenCalledOnce();
     expect(onGameEnd).toHaveBeenCalledWith({ score: 0, wordsFound: 0 });
 
