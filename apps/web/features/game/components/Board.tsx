@@ -26,7 +26,7 @@ export interface BoardProps extends Omit<
   /** Called whenever the active drag path changes. */
   onSelectionChange?: (indexes: readonly number[]) => void;
   /** Called when a non-empty path is released successfully. */
-  onSelectionComplete?: (indexes: readonly number[]) => void;
+  onSelectionComplete?: (indexes: readonly number[]) => boolean | void;
 }
 
 function isAdjacent(first: number, second: number, size: number) {
@@ -60,6 +60,10 @@ export function Board({
   }
 
   const [selected, setSelected] = useState<readonly number[]>([]);
+  const [successfulSelection, setSuccessfulSelection] = useState<{
+    indexes: readonly number[];
+    sequence: number;
+  }>({ indexes: [], sequence: 0 });
   const selectedRef = useRef<readonly number[]>([]);
   const activePointerRef = useRef<number | null>(null);
   const cellCount = size * size;
@@ -151,8 +155,17 @@ export function Board({
 
     const completed = selectedRef.current;
     updateSelection([]);
-    if (!disabled && !cancelled && completed.length > 0)
-      onSelectionComplete?.(completed);
+    if (
+      !disabled &&
+      !cancelled &&
+      completed.length > 0 &&
+      onSelectionComplete?.(completed)
+    ) {
+      setSuccessfulSelection((feedback) => ({
+        indexes: completed,
+        sequence: feedback.sequence + 1,
+      }));
+    }
   };
 
   return (
@@ -191,19 +204,21 @@ export function Board({
       {boardCells
         ? boardCells.map((cell, index) => {
             const isSelected = selected.includes(index);
+            const isSuccessful = successfulSelection.indexes.includes(index);
             return (
               <div
                 aria-colindex={(index % size) + 1}
                 aria-rowindex={Math.floor(index / size) + 1}
                 aria-selected={isSelected}
                 className={cn(
-                  "flex min-h-0 min-w-0 items-center justify-center border border-slate-200 bg-white text-[clamp(0.75rem,5cqw,2rem)] font-semibold uppercase leading-none transition-colors dark:border-slate-800 dark:bg-slate-900",
+                  "game-tile flex min-h-0 min-w-0 items-center justify-center border border-slate-200 bg-white text-[clamp(0.75rem,5cqw,2rem)] font-semibold uppercase leading-none dark:border-slate-800 dark:bg-slate-900",
                   isSelected &&
-                    "border-sky-500 bg-sky-200 text-sky-950 dark:border-sky-400 dark:bg-sky-700 dark:text-white",
+                    "game-tile-selected border-sky-500 bg-sky-200 text-sky-950 dark:border-sky-400 dark:bg-sky-700 dark:text-white",
+                  isSuccessful && "game-tile-success",
                   cellClassName,
                 )}
                 data-cell-index={index}
-                key={index}
+                key={`${index}-${isSuccessful ? successfulSelection.sequence : 0}`}
                 role="gridcell"
               >
                 {cell}

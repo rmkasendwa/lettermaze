@@ -25,22 +25,19 @@ export function PlayGame({
   onGameEnd,
 }: PlayGameProps) {
   const duration = Math.max(0, Math.floor(durationSeconds));
-  const playableWords = useMemo(
-    () => {
-      if (
-        cells.length !== size * size ||
-        cells.some((cell) => !/^[A-Z]$/.test(cell))
-      ) {
-        return [];
-      }
+  const playableWords = useMemo(() => {
+    if (
+      cells.length !== size * size ||
+      cells.some((cell) => !/^[A-Z]$/.test(cell))
+    ) {
+      return [];
+    }
 
-      const letterCells = cells as readonly Letter[];
-      return DEFAULT_PLAYABLE_WORDS.filter((word) =>
-        findWordPath({ cells: letterCells, size }, word),
-      );
-    },
-    [cells, size],
-  );
+    const letterCells = cells as readonly Letter[];
+    return DEFAULT_PLAYABLE_WORDS.filter((word) =>
+      findWordPath({ cells: letterCells, size }, word),
+    );
+  }, [cells, size]);
   const submissions = useRef(
     new WordSubmissionTracker(createWordDictionary(DEFAULT_PLAYABLE_WORDS)),
   );
@@ -111,10 +108,10 @@ export function PlayGame({
   }, [isGameOver]);
 
   const submitPath = (indexes: readonly number[]) => {
-    if (isPaused || isGameOver) return;
+    if (isPaused || isGameOver) return false;
     const word = indexes.map((index) => cells[index] ?? "").join("");
     const acceptedWord = submissions.current.submit(word);
-    if (!acceptedWord) return;
+    if (!acceptedWord) return false;
 
     const points = scoreWord(acceptedWord);
     scoreRef.current += points;
@@ -123,6 +120,7 @@ export function PlayGame({
     setWordsFound(wordsFoundRef.current);
     setFoundWords((words) => [...words, acceptedWord]);
     setScoreUpdate((update) => ({ points, sequence: update.sequence + 1 }));
+    return true;
   };
 
   if (isGameOver) {
@@ -146,7 +144,10 @@ export function PlayGame({
           <h2 className="mt-2 text-3xl font-bold" id="results-heading">
             Game results
           </h2>
-          <p className="mt-4 text-5xl font-black tabular-nums" data-testid="results-score">
+          <p
+            className="mt-4 text-5xl font-black tabular-nums"
+            data-testid="results-score"
+          >
             {score}
           </p>
           <p className="mt-1 text-sm font-medium text-sky-100">Total score</p>
@@ -158,7 +159,10 @@ export function PlayGame({
               <p className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                 Words found
               </p>
-              <p className="mt-1 text-2xl font-bold tabular-nums" data-testid="results-words-found">
+              <p
+                className="mt-1 text-2xl font-bold tabular-nums"
+                data-testid="results-words-found"
+              >
                 {foundWords.length}
               </p>
             </div>
@@ -175,30 +179,46 @@ export function PlayGame({
           <div>
             <h3 className="font-bold">Your words</h3>
             {foundWords.length > 0 ? (
-              <ul className="mt-2 flex flex-wrap gap-2" aria-label="Words found">
+              <ul
+                className="mt-2 flex flex-wrap gap-2"
+                aria-label="Words found"
+              >
                 {foundWords.map((word) => (
-                  <li className="rounded-full bg-emerald-100 px-3 py-1 text-sm font-semibold text-emerald-800 dark:bg-emerald-950 dark:text-emerald-200" key={word}>
+                  <li
+                    className="rounded-full bg-emerald-100 px-3 py-1 text-sm font-semibold text-emerald-800 dark:bg-emerald-950 dark:text-emerald-200"
+                    key={word}
+                  >
                     {word}
                   </li>
                 ))}
               </ul>
             ) : (
-              <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">No words found this round.</p>
+              <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+                No words found this round.
+              </p>
             )}
           </div>
 
           <div>
             <h3 className="font-bold">Missed words</h3>
             {missedWords.length > 0 ? (
-              <ul className="mt-2 flex flex-wrap gap-2" aria-label="Missed words">
+              <ul
+                className="mt-2 flex flex-wrap gap-2"
+                aria-label="Missed words"
+              >
                 {missedWords.map((word) => (
-                  <li className="rounded-full bg-amber-100 px-3 py-1 text-sm font-semibold text-amber-900 dark:bg-amber-950 dark:text-amber-200" key={word}>
+                  <li
+                    className="rounded-full bg-amber-100 px-3 py-1 text-sm font-semibold text-amber-900 dark:bg-amber-950 dark:text-amber-200"
+                    key={word}
+                  >
                     {word}
                   </li>
                 ))}
               </ul>
             ) : (
-              <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">You found every word!</p>
+              <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+                You found every word!
+              </p>
             )}
           </div>
 
@@ -268,17 +288,15 @@ export function PlayGame({
       </div>
       <div className="mb-3 flex items-center justify-between">
         <span className="font-semibold" role="status">
-          {isPaused
-              ? "Game paused"
-              : "Game in progress"}
+          {isPaused ? "Game paused" : "Game in progress"}
         </span>
         <button
-            className="min-h-11 rounded-lg border border-slate-300 bg-white px-4 font-semibold dark:border-slate-700 dark:bg-slate-900"
-            onClick={() => setIsPaused((paused) => !paused)}
-            type="button"
-          >
-            {isPaused ? "Resume" : "Pause"}
-          </button>
+          className="min-h-11 rounded-lg border border-slate-300 bg-white px-4 font-semibold dark:border-slate-700 dark:bg-slate-900"
+          onClick={() => setIsPaused((paused) => !paused)}
+          type="button"
+        >
+          {isPaused ? "Resume" : "Pause"}
+        </button>
       </div>
       <Board
         cells={cells}

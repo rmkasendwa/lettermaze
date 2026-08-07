@@ -23,7 +23,7 @@ describe("Board", () => {
   });
 
   it("selects adjacent cells, highlights them, and completes the path", () => {
-    const onSelectionComplete = vi.fn();
+    const onSelectionComplete = vi.fn(() => true);
     render(
       <Board
         cells={["A", "B", "C", "D"]}
@@ -61,6 +61,9 @@ describe("Board", () => {
       "aria-selected",
       "true",
     );
+    expect(screen.getAllByRole("gridcell")[0]).toHaveClass(
+      "game-tile-selected",
+    );
     expect(screen.getAllByRole("gridcell")[1]).toHaveAttribute(
       "aria-selected",
       "true",
@@ -77,6 +80,7 @@ describe("Board", () => {
       "aria-selected",
       "false",
     );
+    expect(screen.getAllByRole("gridcell")[0]).toHaveClass("game-tile-success");
   });
 
   it("unwinds naturally and ignores invalid jumps", () => {
