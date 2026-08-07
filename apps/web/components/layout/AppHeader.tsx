@@ -4,6 +4,7 @@ import { ThemeSelector } from "@/features/settings";
 import { AppNavigation } from "./AppNavigation";
 import { PageContainer } from "./PageContainer";
 import { AccountControls } from "@/features/account/AccountControls";
+import { PwaControls } from "@/components/pwa/PwaControls";
 
 export function AppHeader() {
   return (
@@ -17,6 +18,7 @@ export function AppHeader() {
         </Link>
         <AppNavigation />
         <div className="flex items-center gap-2">
+          <PwaControls />
           <AccountControls />
           <ThemeSelector compact />
         </div>

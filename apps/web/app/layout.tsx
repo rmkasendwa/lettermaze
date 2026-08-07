@@ -10,6 +10,19 @@ export const metadata: Metadata = {
   title: { default: appConfig.name, template: `%s | ${appConfig.name}` },
   description: appConfig.description,
   manifest: "/manifest.webmanifest",
+  applicationName: appConfig.name,
+  appleWebApp: {
+    capable: true,
+    title: appConfig.name,
+    statusBarStyle: "default",
+  },
+  icons: {
+    icon: [
+      { url: "/icons/icon-192.png", sizes: "192x192", type: "image/png" },
+      { url: "/icons/icon-512.png", sizes: "512x512", type: "image/png" },
+    ],
+    apple: [{ url: "/icons/apple-touch-icon.png", sizes: "180x180" }],
+  },
   openGraph: {
     type: "website",
     url: appConfig.url,
