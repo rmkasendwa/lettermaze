@@ -11,3 +11,36 @@
 body {
   @apply bg-slate-50 text-slate-950 antialiased dark:bg-slate-950 dark:text-slate-50;
 }
+
+@keyframes score-pop {
+  50% {
+    transform: scale(1.2);
+    color: rgb(5 150 105);
+  }
+}
+
+@keyframes score-points {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-1.25rem);
+  }
+}
+
+.score-update {
+  animation: score-pop 300ms ease-out;
+}
+
+.score-points {
+  animation: score-points 700ms ease-out forwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .score-update,
+  .score-points {
+    animation: none;
+  }
+}

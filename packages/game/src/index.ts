@@ -14,6 +14,7 @@ export {
   type LetterWeights,
 } from "./letters";
 export { createSeededRandom, randomIndex, type RandomSource } from "./random";
+export { scoreWord } from "./scoring";
 export {
   createWordDictionary,
   loadWordDictionary,

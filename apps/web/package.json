@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@lettermaze/contracts": "workspace:*",
+    "@lettermaze/game": "workspace:*",
     "clsx": "^2.1.1",
     "lucide-react": "^0.468.0",
     "next": "^16.2.12",

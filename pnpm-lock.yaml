@@ -90,6 +90,9 @@ importers:
       '@lettermaze/contracts':
         specifier: workspace:*
         version: link:../../packages/contracts
+      '@lettermaze/game':
+        specifier: workspace:*
+        version: link:../../packages/game
       clsx:
         specifier: ^2.1.1
         version: 2.1.1
