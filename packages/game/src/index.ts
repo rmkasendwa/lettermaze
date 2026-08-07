@@ -14,6 +14,12 @@ export {
   type LetterWeights,
 } from "./letters";
 export { createSeededRandom, randomIndex, type RandomSource } from "./random";
+export {
+  DAILY_BOARD_SIZE,
+  generateDailyBoard,
+  getNextUtcPuzzleAt,
+  getUtcPuzzleId,
+} from "./daily";
 export { scoreWord } from "./scoring";
 export {
   createWordDictionary,

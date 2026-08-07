@@ -1,1 +1,1 @@
-export {};
+export { DailyChallenge } from "./components/DailyChallenge";

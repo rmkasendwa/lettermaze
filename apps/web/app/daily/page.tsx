@@ -1,11 +1,8 @@
 import type { Metadata } from "next";
-import { EmptyState } from "@/components/ui/EmptyState";
+import { getUtcPuzzleId } from "@lettermaze/game";
+import { DailyChallenge } from "@/features/daily-challenge";
 export const metadata: Metadata = { title: "Daily Challenge" };
+export const dynamic = "force-dynamic";
 export default function DailyPage() {
-  return (
-    <EmptyState
-      title="Daily Challenge"
-      description="Daily challenges will be implemented in a future milestone."
-    />
-  );
+  return <DailyChallenge puzzleId={getUtcPuzzleId()} />;
 }
