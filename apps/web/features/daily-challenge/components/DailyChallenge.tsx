@@ -27,9 +27,9 @@ export function DailyChallenge({ puzzleId }: { puzzleId: string }) {
   const [rankedAttemptUsed, setRankedAttemptUsed] = useState(false);
   const [submissionStatus, setSubmissionStatus] = useState("");
   const [leaderboard, setLeaderboard] = useState<Leaderboard | null>(null);
-  const [untilNext, setUntilNext] = useState(
-    () => getNextUtcPuzzleAt().getTime() - Date.now(),
-  );
+  // Keep the server and first client render identical. The live value is filled
+  // in after hydration, when both calculations use the browser's clock.
+  const [untilNext, setUntilNext] = useState<number | null>(null);
 
   const loadLeaderboard = useCallback(
     async (playerId?: string) => {
@@ -110,7 +110,7 @@ export function DailyChallenge({ puzzleId }: { puzzleId: string }) {
             className="font-bold tabular-nums"
             data-testid="daily-countdown"
           >
-            {formatCountdown(untilNext)}
+            {untilNext === null ? "--:--:--" : formatCountdown(untilNext)}
           </span>
           {leaderboard == null
             ? ""
