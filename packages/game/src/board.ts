@@ -31,6 +31,12 @@ export interface GenerateBoardOptions {
   random?: RandomSource;
 }
 
+export interface LetterBoard {
+  readonly size: number;
+  /** Uppercase letters in row-major order. */
+  readonly cells: readonly Letter[];
+}
+
 export const DEFAULT_PLAYABLE_WORDS = [
   "A",
   "I",
@@ -46,6 +52,93 @@ export const DEFAULT_PLAYABLE_WORDS = [
   "LETTER",
   "PLANET",
 ] as const;
+
+/**
+ * Finds one path spelling `word`, using horizontal, vertical, or diagonal
+ * neighbours. A cell can occur at most once in the returned path.
+ */
+export function findWordPath(
+  board: LetterBoard,
+  word: string,
+): Coordinate[] | null {
+  const { cells, size } = board;
+  if (!Number.isInteger(size) || size < 1 || cells.length !== size * size) {
+    throw new RangeError("Board cells must form a non-empty square board.");
+  }
+
+  const normalizedWord = word.toUpperCase();
+  if (
+    !/^[A-Z]+$/.test(normalizedWord) ||
+    normalizedWord.length > cells.length
+  ) {
+    return null;
+  }
+
+  // Starting at the rarer endpoint substantially reduces failed branches. The
+  // completed path is reversed again so callers always receive word order.
+  let searchWord = normalizedWord;
+  let reversed = false;
+  let firstCount = 0;
+  let lastCount = 0;
+  const lastLetter = normalizedWord[normalizedWord.length - 1];
+  for (const cell of cells) {
+    if (cell === normalizedWord[0]) firstCount += 1;
+    if (cell === lastLetter) lastCount += 1;
+  }
+  if (lastCount < firstCount) {
+    searchWord = [...normalizedWord].reverse().join("");
+    reversed = true;
+  }
+
+  const visited = new Uint8Array(cells.length);
+  const path = new Array<number>(searchWord.length);
+
+  const visit = (cellIndex: number, wordIndex: number): boolean => {
+    if (cells[cellIndex] !== searchWord[wordIndex] || visited[cellIndex]) {
+      return false;
+    }
+
+    path[wordIndex] = cellIndex;
+    if (wordIndex === searchWord.length - 1) return true;
+
+    visited[cellIndex] = 1;
+    const row = Math.floor(cellIndex / size);
+    const column = cellIndex % size;
+    const minRow = Math.max(0, row - 1);
+    const maxRow = Math.min(size - 1, row + 1);
+    const minColumn = Math.max(0, column - 1);
+    const maxColumn = Math.min(size - 1, column + 1);
+
+    for (let nextRow = minRow; nextRow <= maxRow; nextRow += 1) {
+      for (
+        let nextColumn = minColumn;
+        nextColumn <= maxColumn;
+        nextColumn += 1
+      ) {
+        const nextIndex = nextRow * size + nextColumn;
+        if (nextIndex !== cellIndex && visit(nextIndex, wordIndex + 1)) {
+          visited[cellIndex] = 0;
+          return true;
+        }
+      }
+    }
+
+    visited[cellIndex] = 0;
+    return false;
+  };
+
+  for (let index = 0; index < cells.length; index += 1) {
+    if (visit(index, 0)) {
+      const indexes = reversed ? path.slice().reverse() : path;
+      return indexes.map((cellIndex) => ({
+        row: Math.floor(cellIndex / size),
+        column: cellIndex % size,
+      }));
+    }
+  }
+
+  return null;
+}
 
 function createSnakePath(size: number, random: RandomSource): Coordinate[] {
   const path: Coordinate[] = [];
