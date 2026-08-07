@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { PlayGame } from "@/features/game";
 
@@ -80,5 +80,31 @@ describe("PlayGame", () => {
     selectLetterRow();
     expect(screen.getByTestId("score")).toHaveTextContent("3");
     expect(screen.getByTestId("words-found")).toHaveTextContent("1");
+  });
+
+  it("counts down, pauses, and ends with the final score", () => {
+    vi.useFakeTimers();
+    const onGameEnd = vi.fn();
+    render(
+      <PlayGame
+        cells={cells}
+        size={5}
+        durationSeconds={2}
+        onGameEnd={onGameEnd}
+      />,
+    );
+
+    expect(screen.getByTestId("timer")).toHaveTextContent("0:02");
+    fireEvent.click(screen.getByRole("button", { name: "Pause" }));
+    act(() => vi.advanceTimersByTime(3000));
+    expect(screen.getByTestId("timer")).toHaveTextContent("0:02");
+
+    fireEvent.click(screen.getByRole("button", { name: "Resume" }));
+    act(() => vi.advanceTimersByTime(2000));
+    expect(screen.getByText("Game over")).toBeInTheDocument();
+    expect(screen.getByRole("grid")).toHaveAttribute("aria-disabled", "true");
+    expect(onGameEnd).toHaveBeenCalledOnce();
+    expect(onGameEnd).toHaveBeenCalledWith({ score: 0, wordsFound: 0 });
+    vi.useRealTimers();
   });
 });

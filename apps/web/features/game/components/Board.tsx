@@ -21,6 +21,8 @@ export interface BoardProps extends Omit<
   cells?: readonly ReactNode[];
   cellClassName?: string;
   label?: string;
+  /** Prevents starting or completing selections. */
+  disabled?: boolean;
   /** Called whenever the active drag path changes. */
   onSelectionChange?: (indexes: readonly number[]) => void;
   /** Called when a non-empty path is released successfully. */
@@ -42,6 +44,7 @@ export function Board({
   className,
   cellClassName,
   label = "LetterMaze board",
+  disabled = false,
   style,
   onSelectionChange,
   onSelectionComplete,
@@ -100,7 +103,12 @@ export function Board({
 
   const handlePointerDown = (event: ReactPointerEvent<HTMLDivElement>) => {
     onPointerDown?.(event);
-    if (event.defaultPrevented || !event.isPrimary || event.button !== 0)
+    if (
+      disabled ||
+      event.defaultPrevented ||
+      !event.isPrimary ||
+      event.button !== 0
+    )
       return;
 
     const index = indexAtPointer(event);
@@ -143,7 +151,8 @@ export function Board({
 
     const completed = selectedRef.current;
     updateSelection([]);
-    if (!cancelled && completed.length > 0) onSelectionComplete?.(completed);
+    if (!disabled && !cancelled && completed.length > 0)
+      onSelectionComplete?.(completed);
   };
 
   return (
@@ -152,9 +161,11 @@ export function Board({
       role="grid"
       aria-colcount={size}
       aria-rowcount={size}
+      aria-disabled={disabled}
       className={cn(
         "grid aspect-square w-full min-w-0 touch-none select-none overflow-hidden rounded-xl border border-slate-300 bg-slate-300 shadow-sm dark:border-slate-700 dark:bg-slate-700",
         "[grid-template-columns:repeat(var(--board-size),minmax(0,1fr))] [grid-template-rows:repeat(var(--board-size),minmax(0,1fr))]",
+        disabled && "cursor-not-allowed opacity-60",
         className,
       )}
       style={boardStyle}
