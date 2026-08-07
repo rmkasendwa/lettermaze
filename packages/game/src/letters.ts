@@ -1,4 +1,4 @@
-import type { RandomSource } from "./random.js";
+import type { RandomSource } from "./random";
 
 /** Relative frequencies in a representative sample of English text. */
 export const ENGLISH_LETTER_FREQUENCIES = {

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { findWordPath, type Letter } from "../src/index.js";
+import { findWordPath, type Letter } from "../src/index";
 
 const board = {
   size: 3,

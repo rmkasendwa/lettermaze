@@ -3,7 +3,7 @@ import {
   createSeededRandom,
   generateBoard,
   pickWeightedLetter,
-} from "../src/index.js";
+} from "../src/index";
 
 describe("board generation", () => {
   it("generates an identical board for the same seed", () => {

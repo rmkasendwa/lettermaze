@@ -4,7 +4,7 @@ import {
   loadWordDictionary,
   normalizeWord,
   WordSubmissionTracker,
-} from "../src/index.js";
+} from "../src/index";
 
 describe("dictionary validation", () => {
   it("normalizes casing and surrounding whitespace", () => {

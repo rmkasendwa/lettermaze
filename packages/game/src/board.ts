@@ -1,13 +1,5 @@
-import {
-  pickWeightedLetter,
-  type Letter,
-  type LetterWeights,
-} from "./letters.js";
-import {
-  createSeededRandom,
-  randomIndex,
-  type RandomSource,
-} from "./random.js";
+import { pickWeightedLetter, type Letter, type LetterWeights } from "./letters";
+import { createSeededRandom, randomIndex, type RandomSource } from "./random";
 
 export interface Coordinate {
   readonly row: number;

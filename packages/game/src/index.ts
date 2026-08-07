@@ -6,22 +6,18 @@ export {
   type GenerateBoardOptions,
   type GeneratedBoard,
   type LetterBoard,
-} from "./board.js";
+} from "./board";
 export {
   ENGLISH_LETTER_FREQUENCIES,
   pickWeightedLetter,
   type Letter,
   type LetterWeights,
-} from "./letters.js";
-export {
-  createSeededRandom,
-  randomIndex,
-  type RandomSource,
-} from "./random.js";
+} from "./letters";
+export { createSeededRandom, randomIndex, type RandomSource } from "./random";
 export {
   createWordDictionary,
   loadWordDictionary,
   normalizeWord,
   WordSubmissionTracker,
   type WordDictionary,
-} from "./dictionary.js";
+} from "./dictionary";
