@@ -18,3 +18,10 @@ export {
   randomIndex,
   type RandomSource,
 } from "./random.js";
+export {
+  createWordDictionary,
+  loadWordDictionary,
+  normalizeWord,
+  WordSubmissionTracker,
+  type WordDictionary,
+} from "./dictionary.js";
