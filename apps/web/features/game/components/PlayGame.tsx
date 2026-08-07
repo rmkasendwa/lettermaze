@@ -1,10 +1,12 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   createWordDictionary,
   DEFAULT_PLAYABLE_WORDS,
+  findWordPath,
   scoreWord,
+  type Letter,
   WordSubmissionTracker,
 } from "@lettermaze/game";
 import { Board } from "./Board";
@@ -23,9 +25,26 @@ export function PlayGame({
   onGameEnd,
 }: PlayGameProps) {
   const duration = Math.max(0, Math.floor(durationSeconds));
+  const playableWords = useMemo(
+    () => {
+      if (
+        cells.length !== size * size ||
+        cells.some((cell) => !/^[A-Z]$/.test(cell))
+      ) {
+        return [];
+      }
+
+      const letterCells = cells as readonly Letter[];
+      return DEFAULT_PLAYABLE_WORDS.filter((word) =>
+        findWordPath({ cells: letterCells, size }, word),
+      );
+    },
+    [cells, size],
+  );
   const submissions = useRef(
     new WordSubmissionTracker(createWordDictionary(DEFAULT_PLAYABLE_WORDS)),
   );
+  const [foundWords, setFoundWords] = useState<string[]>([]);
   const [score, setScore] = useState(0);
   const [wordsFound, setWordsFound] = useState(0);
   const [scoreUpdate, setScoreUpdate] = useState({ points: 0, sequence: 0 });
@@ -34,7 +53,7 @@ export function PlayGame({
   const [isGameOver, setIsGameOver] = useState(duration === 0);
   const scoreRef = useRef(0);
   const wordsFoundRef = useRef(0);
-  const deadlineRef = useRef(Date.now() + duration * 1000);
+  const deadlineRef = useRef(0);
   const remainingMsRef = useRef(duration * 1000);
   const endedRef = useRef(false);
 
@@ -46,6 +65,22 @@ export function PlayGame({
     setIsGameOver(true);
     onGameEnd?.({ score: scoreRef.current, wordsFound: wordsFoundRef.current });
   }, [onGameEnd]);
+
+  const replay = () => {
+    submissions.current.reset();
+    scoreRef.current = 0;
+    wordsFoundRef.current = 0;
+    remainingMsRef.current = duration * 1000;
+    deadlineRef.current = Date.now() + duration * 1000;
+    endedRef.current = false;
+    setScore(0);
+    setWordsFound(0);
+    setFoundWords([]);
+    setScoreUpdate({ points: 0, sequence: 0 });
+    setRemainingSeconds(duration);
+    setIsPaused(false);
+    setIsGameOver(duration === 0);
+  };
 
   useEffect(() => {
     if (duration === 0) {
@@ -86,8 +121,98 @@ export function PlayGame({
     wordsFoundRef.current = submissions.current.size;
     setScore(scoreRef.current);
     setWordsFound(wordsFoundRef.current);
+    setFoundWords((words) => [...words, acceptedWord]);
     setScoreUpdate((update) => ({ points, sequence: update.sequence + 1 }));
   };
+
+  if (isGameOver) {
+    const longestWord = foundWords.reduce(
+      (longest, word) => (word.length > longest.length ? word : longest),
+      "",
+    );
+    const missedWords = playableWords.filter(
+      (word) => !foundWords.includes(word),
+    );
+
+    return (
+      <section
+        aria-labelledby="results-heading"
+        className="w-full overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xl dark:border-slate-800 dark:bg-slate-900"
+      >
+        <div className="bg-gradient-to-br from-sky-600 to-indigo-700 px-6 py-8 text-center text-white sm:px-10">
+          <p className="text-sm font-semibold uppercase tracking-[0.2em] text-sky-100">
+            Time&apos;s up
+          </p>
+          <h2 className="mt-2 text-3xl font-bold" id="results-heading">
+            Game results
+          </h2>
+          <p className="mt-4 text-5xl font-black tabular-nums" data-testid="results-score">
+            {score}
+          </p>
+          <p className="mt-1 text-sm font-medium text-sky-100">Total score</p>
+        </div>
+
+        <div className="space-y-6 p-6 sm:p-8">
+          <div className="grid grid-cols-2 gap-3">
+            <div className="rounded-xl bg-slate-100 p-4 dark:bg-slate-800">
+              <p className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                Words found
+              </p>
+              <p className="mt-1 text-2xl font-bold tabular-nums" data-testid="results-words-found">
+                {foundWords.length}
+              </p>
+            </div>
+            <div className="rounded-xl bg-slate-100 p-4 dark:bg-slate-800">
+              <p className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                Longest word
+              </p>
+              <p className="mt-1 truncate text-2xl font-bold uppercase">
+                {longestWord || "—"}
+              </p>
+            </div>
+          </div>
+
+          <div>
+            <h3 className="font-bold">Your words</h3>
+            {foundWords.length > 0 ? (
+              <ul className="mt-2 flex flex-wrap gap-2" aria-label="Words found">
+                {foundWords.map((word) => (
+                  <li className="rounded-full bg-emerald-100 px-3 py-1 text-sm font-semibold text-emerald-800 dark:bg-emerald-950 dark:text-emerald-200" key={word}>
+                    {word}
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">No words found this round.</p>
+            )}
+          </div>
+
+          <div>
+            <h3 className="font-bold">Missed words</h3>
+            {missedWords.length > 0 ? (
+              <ul className="mt-2 flex flex-wrap gap-2" aria-label="Missed words">
+                {missedWords.map((word) => (
+                  <li className="rounded-full bg-amber-100 px-3 py-1 text-sm font-semibold text-amber-900 dark:bg-amber-950 dark:text-amber-200" key={word}>
+                    {word}
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">You found every word!</p>
+            )}
+          </div>
+
+          <button
+            className="min-h-12 w-full rounded-xl bg-sky-600 px-5 font-bold text-white shadow-sm transition-colors hover:bg-sky-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-600"
+            onClick={replay}
+            type="button"
+          >
+            Play again
+          </button>
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section aria-label="Current game" className="w-full">
@@ -143,21 +268,17 @@ export function PlayGame({
       </div>
       <div className="mb-3 flex items-center justify-between">
         <span className="font-semibold" role="status">
-          {isGameOver
-            ? "Game over"
-            : isPaused
+          {isPaused
               ? "Game paused"
               : "Game in progress"}
         </span>
-        {!isGameOver ? (
-          <button
+        <button
             className="min-h-11 rounded-lg border border-slate-300 bg-white px-4 font-semibold dark:border-slate-700 dark:bg-slate-900"
             onClick={() => setIsPaused((paused) => !paused)}
             type="button"
           >
             {isPaused ? "Resume" : "Pause"}
           </button>
-        ) : null}
       </div>
       <Board
         cells={cells}
