@@ -2,6 +2,7 @@ import { z } from "zod";
 
 export const leaderboardEntrySchema = z.object({
   rank: z.number().int().positive(),
+  playerLabel: z.string().min(1),
   score: z.number().int().nonnegative(),
   wordsFound: z.number().int().nonnegative(),
   submittedAt: z.string().datetime(),
@@ -9,7 +10,9 @@ export const leaderboardEntrySchema = z.object({
 
 export const leaderboardSchema = z.object({
   puzzleId: z.string(),
+  totalPlayers: z.number().int().nonnegative(),
   entries: z.array(leaderboardEntrySchema),
+  currentPlayer: leaderboardEntrySchema.nullable(),
 });
 
 export const scoreSubmissionSchema = z.object({
