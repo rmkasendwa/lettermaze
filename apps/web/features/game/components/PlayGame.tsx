@@ -24,6 +24,67 @@ export interface PlayGameProps {
   onGameEnd?: (result: { score: number; wordsFound: number }) => void;
 }
 
+function AcceptedWordsPanel({
+  heading = "Accepted words",
+  headingId,
+  words,
+}: {
+  heading?: string;
+  headingId: string;
+  words: readonly string[];
+}) {
+  const sortedWords = useMemo(
+    () => [...words].sort((first, second) => first.localeCompare(second)),
+    [words],
+  );
+
+  return (
+    <section
+      aria-labelledby={headingId}
+      className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900"
+    >
+      <div className="flex items-baseline justify-between gap-3">
+        <h3 className="font-bold" id={headingId}>
+          {heading}
+        </h3>
+        <span className="shrink-0 text-xs font-semibold tabular-nums text-slate-500 dark:text-slate-400">
+          {sortedWords.length} {sortedWords.length === 1 ? "word" : "words"}
+        </span>
+      </div>
+      {sortedWords.length > 0 ? (
+        <ul
+          aria-label="Accepted words"
+          className="mt-3 grid max-h-40 grid-cols-1 gap-2 overflow-y-auto overscroll-contain pr-1 sm:grid-cols-2"
+        >
+          {sortedWords.map((word) => {
+            const points = scoreWord(word);
+            return (
+              <li
+                className="flex min-w-0 items-center justify-between gap-3 rounded-lg bg-emerald-50 px-3 py-2 text-sm dark:bg-emerald-950/60"
+                key={word}
+              >
+                <span className="min-w-0 truncate font-semibold uppercase text-emerald-900 dark:text-emerald-100">
+                  {word}
+                </span>
+                <span className="shrink-0 font-bold tabular-nums text-emerald-700 dark:text-emerald-300">
+                  +{points}{" "}
+                  <span className="sr-only">
+                    {points === 1 ? "point" : "points"}
+                  </span>
+                </span>
+              </li>
+            );
+          })}
+        </ul>
+      ) : (
+        <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
+          No words accepted yet.
+        </p>
+      )}
+    </section>
+  );
+}
+
 export function PlayGame({
   cells,
   size,
@@ -229,28 +290,11 @@ export function PlayGame({
             </dl>
           </div>
 
-          <div>
-            <h3 className="font-bold">Your words</h3>
-            {foundWords.length > 0 ? (
-              <ul
-                className="mt-2 flex flex-wrap gap-2"
-                aria-label="Words found"
-              >
-                {foundWords.map((word) => (
-                  <li
-                    className="rounded-full bg-emerald-100 px-3 py-1 text-sm font-semibold text-emerald-800 dark:bg-emerald-950 dark:text-emerald-200"
-                    key={word}
-                  >
-                    {word}
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-                No words found this round.
-              </p>
-            )}
-          </div>
+          <AcceptedWordsPanel
+            heading="Your words"
+            headingId="results-accepted-words-heading"
+            words={foundWords}
+          />
 
           <div>
             <h3 className="font-bold">Missed words</h3>
@@ -382,6 +426,12 @@ export function PlayGame({
         onSelectionChange={setSelectedIndexes}
         onSelectionComplete={submitPath}
       />
+      <div className="mt-4">
+        <AcceptedWordsPanel
+          headingId="accepted-words-heading"
+          words={foundWords}
+        />
+      </div>
     </section>
   );
 }

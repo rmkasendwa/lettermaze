@@ -68,6 +68,38 @@ function selectLetterRow() {
   fireEvent.pointerUp(board, { pointerId: 1 });
 }
 
+function selectTreeRow() {
+  const board = screen.getByRole("grid");
+  vi.spyOn(board, "getBoundingClientRect").mockReturnValue({
+    left: 0,
+    top: 0,
+    right: 500,
+    bottom: 500,
+    width: 500,
+    height: 500,
+    x: 0,
+    y: 0,
+    toJSON: () => ({}),
+  });
+
+  fireEvent.pointerDown(board, {
+    button: 0,
+    clientX: 50,
+    clientY: 450,
+    isPrimary: true,
+    pointerId: 2,
+  });
+  for (const clientX of [150, 250, 350]) {
+    fireEvent.pointerMove(board, {
+      clientX,
+      clientY: 450,
+      isPrimary: true,
+      pointerId: 2,
+    });
+  }
+  fireEvent.pointerUp(board, { pointerId: 2 });
+}
+
 describe("PlayGame", () => {
   it("previews the selected word and clears it when selection ends", () => {
     render(<PlayGame cells={cells} size={5} />);
@@ -118,17 +150,40 @@ describe("PlayGame", () => {
   });
 
   it("updates totals immediately for a valid word and ignores duplicates", () => {
-    render(<PlayGame cells={cells} size={5} />);
+    render(
+      <PlayGame
+        cells={[...cells.slice(0, 20), "T", "R", "E", "E", "S"]}
+        size={5}
+      />,
+    );
 
+    expect(
+      screen.getByRole("heading", { name: "Accepted words" }),
+    ).toBeInTheDocument();
+    expect(screen.getByText("No words accepted yet.")).toBeInTheDocument();
+
+    selectTreeRow();
     selectLetterRow();
     expect(screen.getByTestId("word-preview")).toBeEmptyDOMElement();
-    expect(screen.getByTestId("score")).toHaveTextContent("3");
-    expect(screen.getByTestId("words-found")).toHaveTextContent("1");
-    expect(screen.getByText("+3")).toHaveClass("score-points");
+    expect(screen.getByTestId("score")).toHaveTextContent("4");
+    expect(screen.getByTestId("words-found")).toHaveTextContent("2");
+    expect(
+      screen.getByTestId("score").querySelector(".score-points"),
+    ).toHaveTextContent("+3");
+    const acceptedWords = screen.getByRole("list", { name: "Accepted words" });
+    expect(acceptedWords).toHaveTextContent("LETTER");
+    expect(acceptedWords).toHaveTextContent("+3 points");
+    expect(acceptedWords).toHaveTextContent("TREE");
+    expect(acceptedWords).toHaveTextContent("+1 point");
+    expect(
+      [...acceptedWords.querySelectorAll("li")].map((item) => item.textContent),
+    ).toEqual(["LETTER+3 points", "TREE+1 point"]);
+    expect(screen.getAllByText("LETTER")).toHaveLength(1);
 
     selectLetterRow();
-    expect(screen.getByTestId("score")).toHaveTextContent("3");
-    expect(screen.getByTestId("words-found")).toHaveTextContent("1");
+    expect(screen.getByTestId("score")).toHaveTextContent("4");
+    expect(screen.getByTestId("words-found")).toHaveTextContent("2");
+    expect(screen.getAllByText("LETTER")).toHaveLength(1);
   });
 
   it("counts down, pauses, and ends with the final score", () => {
@@ -155,7 +210,7 @@ describe("PlayGame", () => {
     ).toBeInTheDocument();
     expect(screen.getByTestId("results-score")).toHaveTextContent("0");
     expect(screen.getByTestId("results-words-found")).toHaveTextContent("0");
-    expect(screen.getByText("No words found this round.")).toBeInTheDocument();
+    expect(screen.getByText("No words accepted yet.")).toBeInTheDocument();
     expect(
       screen.getByRole("list", { name: "Missed words" }),
     ).toBeInTheDocument();
