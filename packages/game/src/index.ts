@@ -22,6 +22,13 @@ export {
 } from "./daily";
 export { scoreWord } from "./scoring";
 export {
+  DIFFICULTY_CONFIGS,
+  DIFFICULTY_LEVELS,
+  isDifficulty,
+  type Difficulty,
+  type DifficultyConfig,
+} from "./difficulty";
+export {
   createWordDictionary,
   loadWordDictionary,
   normalizeWord,
