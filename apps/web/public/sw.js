@@ -1,4 +1,4 @@
-const VERSION = "lettermaze-v1";
+const VERSION = "lettermaze-v2";
 const SHELL_CACHE = `${VERSION}-shell`;
 const RUNTIME_CACHE = `${VERSION}-runtime`;
 const APP_SHELL = [

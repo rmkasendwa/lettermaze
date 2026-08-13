@@ -69,10 +69,59 @@ function selectLetterRow() {
 }
 
 describe("PlayGame", () => {
+  it("previews the selected word and clears it when selection ends", () => {
+    render(<PlayGame cells={cells} size={5} />);
+    const board = screen.getByRole("grid");
+    vi.spyOn(board, "getBoundingClientRect").mockReturnValue({
+      left: 0,
+      top: 0,
+      right: 500,
+      bottom: 500,
+      width: 500,
+      height: 500,
+      x: 0,
+      y: 0,
+      toJSON: () => ({}),
+    });
+
+    fireEvent.pointerDown(board, {
+      button: 0,
+      clientX: 50,
+      clientY: 50,
+      isPrimary: true,
+      pointerId: 7,
+    });
+    expect(screen.getByTestId("word-preview")).toHaveTextContent("L");
+    expect(screen.getByTestId("word-preview-validity")).toHaveTextContent(
+      "Potential word",
+    );
+
+    fireEvent.pointerMove(board, {
+      clientX: 150,
+      clientY: 50,
+      pointerId: 7,
+    });
+    expect(screen.getByTestId("word-preview")).toHaveTextContent("LE");
+
+    fireEvent.pointerMove(board, {
+      clientX: 150,
+      clientY: 150,
+      pointerId: 7,
+    });
+    expect(screen.getByTestId("word-preview")).toHaveTextContent("LEM");
+    expect(screen.getByTestId("word-preview-validity")).toHaveTextContent(
+      "Not a valid word",
+    );
+
+    fireEvent.pointerCancel(board, { pointerId: 7 });
+    expect(screen.getByTestId("word-preview")).toBeEmptyDOMElement();
+  });
+
   it("updates totals immediately for a valid word and ignores duplicates", () => {
     render(<PlayGame cells={cells} size={5} />);
 
     selectLetterRow();
+    expect(screen.getByTestId("word-preview")).toBeEmptyDOMElement();
     expect(screen.getByTestId("score")).toHaveTextContent("3");
     expect(screen.getByTestId("words-found")).toHaveTextContent("1");
     expect(screen.getByText("+3")).toHaveClass("score-points");

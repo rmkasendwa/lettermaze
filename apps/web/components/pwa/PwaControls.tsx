@@ -13,8 +13,29 @@ export function PwaControls() {
     useState<BeforeInstallPromptEvent | null>(null);
 
   useEffect(() => {
-    if ("serviceWorker" in navigator) {
+    if (process.env.NODE_ENV === "production" && "serviceWorker" in navigator) {
       void navigator.serviceWorker.register("/sw.js");
+    } else if ("serviceWorker" in navigator) {
+      // A cache-first service worker can retain Turbopack's development chunks
+      // across edits, pairing stale client JavaScript with fresh server HTML.
+      void navigator.serviceWorker
+        .getRegistrations()
+        .then((registrations) =>
+          Promise.all(
+            registrations.map((registration) => registration.unregister()),
+          ),
+        );
+      if ("caches" in window) {
+        void caches
+          .keys()
+          .then((keys) =>
+            Promise.all(
+              keys
+                .filter((key) => key.startsWith("lettermaze-"))
+                .map((key) => caches.delete(key)),
+            ),
+          );
+      }
     }
 
     const captureInstallPrompt = (event: Event) => {

@@ -48,6 +48,7 @@ export function PlayGame({
     new WordSubmissionTracker(createWordDictionary(DEFAULT_PLAYABLE_WORDS)),
   );
   const [foundWords, setFoundWords] = useState<string[]>([]);
+  const [selectedIndexes, setSelectedIndexes] = useState<readonly number[]>([]);
   const [score, setScore] = useState(0);
   const [wordsFound, setWordsFound] = useState(0);
   const [scoreUpdate, setScoreUpdate] = useState({ points: 0, sequence: 0 });
@@ -70,6 +71,7 @@ export function PlayGame({
     remainingMsRef.current = 0;
     setRemainingSeconds(0);
     setIsGameOver(true);
+    setSelectedIndexes([]);
     setPlayerStatistics(
       recordCompletedGame(browserStorage, {
         score: scoreRef.current,
@@ -90,6 +92,7 @@ export function PlayGame({
     setScore(0);
     setWordsFound(0);
     setFoundWords([]);
+    setSelectedIndexes([]);
     setScoreUpdate({ points: 0, sequence: 0 });
     setRemainingSeconds(duration);
     setIsPaused(false);
@@ -140,6 +143,13 @@ export function PlayGame({
     setScoreUpdate((update) => ({ points, sequence: update.sequence + 1 }));
     return true;
   };
+
+  const selectedWord = selectedIndexes
+    .map((index) => cells[index] ?? "")
+    .join("");
+  const isPotentialWord =
+    selectedWord.length > 0 &&
+    DEFAULT_PLAYABLE_WORDS.some((word) => word.startsWith(selectedWord));
 
   if (isGameOver) {
     const longestWord = foundWords.reduce(
@@ -341,10 +351,35 @@ export function PlayGame({
           {isPaused ? "Resume" : "Pause"}
         </button>
       </div>
+      <div
+        aria-atomic="true"
+        aria-live="polite"
+        className="mb-3 flex min-h-16 items-center justify-center rounded-xl border border-slate-200 bg-white px-4 text-center shadow-sm dark:border-slate-800 dark:bg-slate-900"
+        data-testid="word-preview"
+      >
+        {selectedWord ? (
+          <div>
+            <div className="text-2xl font-bold uppercase tracking-[0.16em]">
+              {selectedWord}
+            </div>
+            <div
+              className={
+                isPotentialWord
+                  ? "text-xs font-semibold text-emerald-600 dark:text-emerald-400"
+                  : "text-xs font-semibold text-rose-600 dark:text-rose-400"
+              }
+              data-testid="word-preview-validity"
+            >
+              {isPotentialWord ? "Potential word" : "Not a valid word"}
+            </div>
+          </div>
+        ) : null}
+      </div>
       <Board
         cells={cells}
         disabled={isPaused || isGameOver}
         size={size}
+        onSelectionChange={setSelectedIndexes}
         onSelectionComplete={submitPath}
       />
     </section>
