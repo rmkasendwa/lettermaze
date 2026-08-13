@@ -60,6 +60,10 @@ export function Board({
   }
 
   const [selected, setSelected] = useState<readonly number[]>([]);
+  const [pointerPosition, setPointerPosition] = useState<{
+    x: number;
+    y: number;
+  } | null>(null);
   const [successfulSelection, setSuccessfulSelection] = useState<{
     indexes: readonly number[];
     sequence: number;
@@ -105,6 +109,27 @@ export function Board({
     return row * size + column;
   };
 
+  const positionAtPointer = (event: ReactPointerEvent<HTMLDivElement>) => {
+    const bounds = event.currentTarget.getBoundingClientRect();
+    if (bounds.width <= 0 || bounds.height <= 0) return null;
+
+    return {
+      x: Math.max(
+        0,
+        Math.min(size, ((event.clientX - bounds.left) / bounds.width) * size),
+      ),
+      y: Math.max(
+        0,
+        Math.min(size, ((event.clientY - bounds.top) / bounds.height) * size),
+      ),
+    };
+  };
+
+  const centerOfCell = (index: number) => ({
+    x: (index % size) + 0.5,
+    y: Math.floor(index / size) + 0.5,
+  });
+
   const handlePointerDown = (event: ReactPointerEvent<HTMLDivElement>) => {
     onPointerDown?.(event);
     if (
@@ -120,12 +145,15 @@ export function Board({
     event.preventDefault();
     activePointerRef.current = event.pointerId;
     event.currentTarget.setPointerCapture?.(event.pointerId);
+    setPointerPosition(positionAtPointer(event));
     updateSelection([index]);
   };
 
   const handlePointerMove = (event: ReactPointerEvent<HTMLDivElement>) => {
     onPointerMove?.(event);
     if (activePointerRef.current !== event.pointerId) return;
+
+    setPointerPosition(positionAtPointer(event));
 
     const index = indexAtPointer(event);
     const path = selectedRef.current;
@@ -149,6 +177,7 @@ export function Board({
   ) => {
     if (activePointerRef.current !== event.pointerId) return;
     activePointerRef.current = null;
+    setPointerPosition(null);
     if (event.currentTarget.hasPointerCapture?.(event.pointerId)) {
       event.currentTarget.releasePointerCapture(event.pointerId);
     }
@@ -176,7 +205,7 @@ export function Board({
       aria-rowcount={size}
       aria-disabled={disabled}
       className={cn(
-        "grid aspect-square w-full min-w-0 touch-none select-none overflow-hidden rounded-xl border border-slate-300 bg-slate-300 shadow-sm dark:border-slate-700 dark:bg-slate-700",
+        "relative grid aspect-square w-full min-w-0 touch-none select-none overflow-hidden rounded-xl border border-slate-300 bg-slate-300 shadow-sm dark:border-slate-700 dark:bg-slate-700",
         "[grid-template-columns:repeat(var(--board-size),minmax(0,1fr))] [grid-template-rows:repeat(var(--board-size),minmax(0,1fr))]",
         disabled && "cursor-not-allowed opacity-60",
         className,
@@ -196,11 +225,34 @@ export function Board({
         onLostPointerCapture?.(event);
         if (activePointerRef.current === event.pointerId) {
           activePointerRef.current = null;
+          setPointerPosition(null);
           updateSelection([]);
         }
       }}
       {...props}
     >
+      {selected.length > 0 && (
+        <svg
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-0 z-10 h-full w-full overflow-visible"
+          data-testid="selection-path"
+          preserveAspectRatio="none"
+          viewBox={`0 0 ${size} ${size}`}
+        >
+          <polyline
+            className="fill-none stroke-sky-500 dark:stroke-sky-300"
+            points={[
+              ...selected.map(centerOfCell),
+              ...(pointerPosition ? [pointerPosition] : []),
+            ]
+              .map(({ x, y }) => `${x},${y}`)
+              .join(" ")}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth="0.14"
+          />
+        </svg>
+      )}
       {boardCells
         ? boardCells.map((cell, index) => {
             const isSelected = selected.includes(index);
@@ -211,7 +263,7 @@ export function Board({
                 aria-rowindex={Math.floor(index / size) + 1}
                 aria-selected={isSelected}
                 className={cn(
-                  "game-tile flex min-h-0 min-w-0 items-center justify-center border border-slate-200 bg-white text-[clamp(0.75rem,5cqw,2rem)] font-semibold uppercase leading-none dark:border-slate-800 dark:bg-slate-900",
+                  "game-tile relative flex min-h-0 min-w-0 items-center justify-center border border-slate-200 bg-white text-[clamp(0.75rem,5cqw,2rem)] font-semibold uppercase leading-none dark:border-slate-800 dark:bg-slate-900",
                   isSelected &&
                     "game-tile-selected border-sky-500 bg-sky-200 text-sky-950 dark:border-sky-400 dark:bg-sky-700 dark:text-white",
                   isSuccessful && "game-tile-success",
@@ -221,7 +273,7 @@ export function Board({
                 key={`${index}-${isSuccessful ? successfulSelection.sequence : 0}`}
                 role="gridcell"
               >
-                {cell}
+                <span className="relative z-20">{cell}</span>
               </div>
             );
           })

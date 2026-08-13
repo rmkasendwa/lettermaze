@@ -68,6 +68,13 @@ describe("Board", () => {
       "aria-selected",
       "true",
     );
+    expect(screen.getByTestId("selection-path")).toHaveAttribute(
+      "viewBox",
+      "0 0 2 2",
+    );
+    expect(
+      screen.getByTestId("selection-path").querySelector("polyline"),
+    ).toHaveAttribute("points", "0.5,0.5 1.5,0.5 1.5,0.5");
 
     fireEvent.pointerUp(board, {
       clientX: 150,
@@ -81,6 +88,40 @@ describe("Board", () => {
       "false",
     );
     expect(screen.getAllByRole("gridcell")[0]).toHaveClass("game-tile-success");
+    expect(screen.queryByTestId("selection-path")).not.toBeInTheDocument();
+  });
+
+  it("draws diagonal connections and follows pointer movement", () => {
+    render(<Board cells={["A", "B", "C", "D"]} size={2} />);
+    const board = screen.getByRole("grid");
+    vi.spyOn(board, "getBoundingClientRect").mockReturnValue({
+      left: 0,
+      top: 0,
+      right: 200,
+      bottom: 200,
+      width: 200,
+      height: 200,
+      x: 0,
+      y: 0,
+      toJSON: () => ({}),
+    });
+
+    fireEvent.pointerDown(board, {
+      button: 0,
+      clientX: 50,
+      clientY: 50,
+      isPrimary: true,
+      pointerId: 4,
+    });
+    fireEvent.pointerMove(board, {
+      clientX: 125,
+      clientY: 125,
+      pointerId: 4,
+    });
+
+    expect(
+      screen.getByTestId("selection-path").querySelector("polyline"),
+    ).toHaveAttribute("points", "0.5,0.5 1.5,1.5 1.25,1.25");
   });
 
   it("unwinds naturally and ignores invalid jumps", () => {
