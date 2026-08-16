@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { z } from "zod";
 import { useAccount } from "@/features/account";
 import { apiRequest } from "@/lib/api/client";
+import { getLocalDate } from "@/features/player";
 
 const statisticsSchema = z.object({
   gamesPlayed: z.number(),
@@ -30,6 +31,7 @@ const profileSchema = z.object({
     totalWordsFound: z.number(),
     highestScore: z.number(),
     averageScore: z.number(),
+    streak: z.object({ current: z.number(), longest: z.number() }),
   }),
   recentGames: z.array(
     z.object({
@@ -90,7 +92,7 @@ export default function ProfilePage() {
   useEffect(() => {
     if (!user) return;
     void Promise.all([
-      apiRequest("/account/profile", profileSchema),
+      apiRequest(`/account/profile?localDate=${getLocalDate()}`, profileSchema),
       apiRequest("/account/games?limit=10", gamesPageSchema),
     ])
       .then(([loadedProfile, page]) => {
@@ -207,6 +209,14 @@ export default function ProfilePage() {
               value={dailyStatistics.averageScore.toFixed(1)}
             />
             <Stat label="Words found" value={dailyStatistics.totalWordsFound} />
+            <Stat
+              label="Current streak"
+              value={`${dailyStatistics.streak.current} days`}
+            />
+            <Stat
+              label="Longest streak"
+              value={`${dailyStatistics.streak.longest} days`}
+            />
           </dl>
         </section>
         <section aria-labelledby="bests-heading">

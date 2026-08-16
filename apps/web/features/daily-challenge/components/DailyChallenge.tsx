@@ -10,9 +10,12 @@ import {
 import { apiRequest } from "@/lib/api/client";
 import { browserStorage } from "@/lib/storage";
 import { PlayGame } from "@/features/game";
+import { getDailyStreak, getLocalDate } from "@/features/player";
+import { useAccount } from "@/features/account";
 import { z } from "zod";
 
 const acceptedSchema = z.object({ accepted: z.literal(true) });
+const streakSchema = z.object({ current: z.number(), longest: z.number() });
 
 function formatCountdown(milliseconds: number): string {
   const seconds = Math.max(0, Math.ceil(milliseconds / 1000));
@@ -22,11 +25,13 @@ function formatCountdown(milliseconds: number): string {
 }
 
 export function DailyChallenge({ puzzleId }: { puzzleId: string }) {
+  const { user } = useAccount();
   const board = useMemo(() => generateDailyBoard(puzzleId), [puzzleId]);
   const attemptKey = `daily-attempt:${puzzleId}`;
   const [rankedAttemptUsed, setRankedAttemptUsed] = useState(false);
   const [submissionStatus, setSubmissionStatus] = useState("");
   const [leaderboard, setLeaderboard] = useState<Leaderboard | null>(null);
+  const [streak, setStreak] = useState({ current: 0, longest: 0 });
   // Keep the server and first client render identical. The live value is filled
   // in after hydration, when both calculations use the browser's clock.
   const [untilNext, setUntilNext] = useState<number | null>(null);
@@ -46,12 +51,29 @@ export function DailyChallenge({ puzzleId }: { puzzleId: string }) {
   useEffect(() => {
     const hydrationTimer = window.setTimeout(() => {
       setRankedAttemptUsed(browserStorage.get(attemptKey) === true);
+      setStreak(getDailyStreak(browserStorage));
       void loadLeaderboard(
         browserStorage.get<string>("daily-player-id") ?? undefined,
       ).catch(() => setLeaderboard(null));
     }, 0);
     return () => window.clearTimeout(hydrationTimer);
   }, [attemptKey, loadLeaderboard]);
+
+  useEffect(() => {
+    if (!user) return;
+    const localDate = getLocalDate();
+    void apiRequest(
+      `/account/streak?localDate=${encodeURIComponent(localDate)}`,
+      streakSchema,
+    )
+      .then((remote) =>
+        setStreak((local) => ({
+          current: Math.max(local.current, remote.current),
+          longest: Math.max(local.longest, remote.longest),
+        })),
+      )
+      .catch(() => undefined);
+  }, [user]);
 
   useEffect(() => {
     const update = () => {
@@ -68,6 +90,7 @@ export function DailyChallenge({ puzzleId }: { puzzleId: string }) {
 
   const finish = useCallback(
     async (result: { score: number; wordsFound: number }) => {
+      setStreak(getDailyStreak(browserStorage));
       if (browserStorage.get(attemptKey) === true) {
         setSubmissionStatus("Replay complete — rankings are unchanged.");
         return;
@@ -104,6 +127,17 @@ export function DailyChallenge({ puzzleId }: { puzzleId: string }) {
           Daily puzzle · {puzzleId} UTC
         </p>
         <h1 className="mt-1 text-3xl font-bold">LetterMaze Daily</h1>
+        <div
+          className="mt-3 flex justify-center gap-3"
+          aria-label="Daily streak progress"
+        >
+          <span className="rounded-full bg-orange-100 px-4 py-1.5 text-sm font-bold text-orange-800 dark:bg-orange-950 dark:text-orange-200">
+            🔥 {streak.current} day current streak
+          </span>
+          <span className="rounded-full bg-violet-100 px-4 py-1.5 text-sm font-bold text-violet-800 dark:bg-violet-950 dark:text-violet-200">
+            Best: {streak.longest} days
+          </span>
+        </div>
         <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">
           Next puzzle in{" "}
           <span

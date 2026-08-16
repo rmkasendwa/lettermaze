@@ -1,4 +1,9 @@
 import type { StorageAdapter } from "@/lib/storage";
+export {
+  getDailyStreak,
+  getLocalDate,
+  recordDailyCompletion,
+} from "./dailyStreak";
 
 export const PLAYER_STATISTICS_KEY = "lettermaze.player-statistics.v1";
 export const PLAYER_STATISTICS_IMPORT_KEY =

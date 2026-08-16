@@ -38,7 +38,9 @@ const completedGameSchema = z.object({
   boardSize: z.number().int().min(2).max(10),
   durationSeconds: z.number().int().nonnegative().max(3600),
   puzzleId: z.string().trim().min(1).max(40).optional(),
+  localDate: z.iso.date().optional(),
 });
+const localDateSchema = z.iso.date();
 
 @Controller("account")
 export class AccountController {
@@ -134,9 +136,25 @@ export class AccountController {
   }
 
   @Get("profile")
-  async profile(@Req() request: Request) {
+  async profile(
+    @Req() request: Request,
+    @Query("localDate") localDate?: string,
+  ) {
     const user = await this.accounts.requireUser(request);
-    return this.accounts.getProfile(user.id);
+    const parsed = localDateSchema.safeParse(localDate);
+    if (!parsed.success) throw new BadRequestException("Invalid local date.");
+    return this.accounts.getProfile(user.id, parsed.data);
+  }
+
+  @Get("streak")
+  async streak(
+    @Req() request: Request,
+    @Query("localDate") localDate?: string,
+  ) {
+    const user = await this.accounts.requireUser(request);
+    const parsed = localDateSchema.safeParse(localDate);
+    if (!parsed.success) throw new BadRequestException("Invalid local date.");
+    return this.accounts.getDailyStreak(user.id, parsed.data);
   }
 
   @Get("games")

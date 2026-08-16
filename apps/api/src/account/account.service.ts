@@ -12,6 +12,7 @@ import {
 import { promisify } from "node:util";
 import type { Request, Response } from "express";
 import { PrismaService } from "../database/prisma.service";
+import { calculateDailyStreak } from "./streak";
 
 const scrypt = promisify(scryptCallback);
 const COOKIE = "lettermaze_session";
@@ -170,6 +171,7 @@ export class AccountService {
       boardSize: number;
       durationSeconds: number;
       puzzleId?: string;
+      localDate?: string;
     },
   ) {
     const longestWord = result.words.reduce(
@@ -190,6 +192,21 @@ export class AccountService {
           puzzleId: result.puzzleId,
         },
       }),
+      ...(result.puzzleId && result.localDate
+        ? [
+            this.prisma.dailyCompletion.upsert({
+              where: {
+                userId_localDate: { userId, localDate: result.localDate },
+              },
+              create: {
+                userId,
+                localDate: result.localDate,
+                puzzleId: result.puzzleId,
+              },
+              update: {},
+            }),
+          ]
+        : []),
       this.prisma.playerStatistics.upsert({
         where: { userId },
         create: {
@@ -271,8 +288,20 @@ export class AccountService {
     return game;
   }
 
-  async getProfile(userId: string) {
-    const [user, statistics, recentGames, daily] = await Promise.all([
+  async getDailyStreak(userId: string, localToday: string) {
+    const completions = await this.prisma.dailyCompletion.findMany({
+      where: { userId },
+      select: { localDate: true },
+      orderBy: { localDate: "asc" },
+    });
+    return calculateDailyStreak(
+      completions.map(({ localDate }) => localDate),
+      localToday,
+    );
+  }
+
+  async getProfile(userId: string, localToday: string) {
+    const [user, statistics, recentGames, daily, streak] = await Promise.all([
       this.prisma.user.findUniqueOrThrow({
         where: { id: userId },
         select: { id: true, name: true, email: true, createdAt: true },
@@ -299,6 +328,7 @@ export class AccountService {
         _max: { score: true },
         _avg: { score: true },
       }),
+      this.getDailyStreak(userId, localToday),
     ]);
     return {
       user,
@@ -309,6 +339,7 @@ export class AccountService {
         totalWordsFound: daily._sum.wordsFound ?? 0,
         highestScore: daily._max.score ?? 0,
         averageScore: daily._avg.score ?? 0,
+        streak,
       },
       recentGames,
     };

@@ -14,6 +14,8 @@ import {
   getNewPersonalBests,
   getPlayerStatistics,
   recordCompletedGame,
+  getLocalDate,
+  recordDailyCompletion,
   type PersonalBest,
   type PlayerStatistics,
 } from "@/features/player";
@@ -178,6 +180,8 @@ export function PlayGame({
       words: foundWordsRef.current,
       isDaily: Boolean(dailyChallengeDate),
     };
+    const localDate = getLocalDate();
+    if (dailyChallengeDate) recordDailyCompletion(browserStorage, localDate);
     const currentStatistics = getPlayerStatistics(browserStorage);
     setNewPersonalBests(getNewPersonalBests(currentStatistics, result));
     setPlayerStatistics(recordCompletedGame(browserStorage, result));
@@ -189,6 +193,7 @@ export function PlayGame({
           boardSize: size,
           durationSeconds: duration,
           puzzleId: dailyChallengeDate,
+          localDate: dailyChallengeDate ? localDate : undefined,
         },
       }),
     );
