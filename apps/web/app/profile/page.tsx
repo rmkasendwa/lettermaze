@@ -44,6 +44,21 @@ const profileSchema = z.object({
       completedAt: z.string(),
     }),
   ),
+  achievements: z.array(
+    z.object({
+      id: z.string(),
+      name: z.string(),
+      description: z.string(),
+      metric: z.enum([
+        "highestScore",
+        "longestWord",
+        "gamesPlayed",
+        "longestStreak",
+      ]),
+      threshold: z.number(),
+      unlockedAt: z.string().nullable(),
+    }),
+  ),
 });
 type Profile = z.infer<typeof profileSchema>;
 const gameSummarySchema = z.object({
@@ -240,6 +255,50 @@ export default function ProfilePage() {
           </dl>
         </section>
       </div>
+
+      <section className="mt-8" aria-labelledby="achievements-heading">
+        <div className="flex items-baseline justify-between gap-4">
+          <h2 className="text-2xl font-bold" id="achievements-heading">
+            Achievements
+          </h2>
+          <span className="text-sm text-slate-500">
+            {profile.achievements.filter(({ unlockedAt }) => unlockedAt).length}
+            /{profile.achievements.length} unlocked
+          </span>
+        </div>
+        <ul className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          {profile.achievements.map((achievement) => {
+            const unlocked = Boolean(achievement.unlockedAt);
+            return (
+              <li
+                className={`rounded-xl border p-4 ${
+                  unlocked
+                    ? "border-amber-300 bg-amber-50 dark:border-amber-700 dark:bg-amber-950/50"
+                    : "border-slate-200 bg-slate-50 text-slate-500 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-400"
+                }`}
+                key={achievement.id}
+              >
+                <div className="flex items-start gap-3">
+                  <span className="text-2xl" aria-hidden="true">
+                    {unlocked ? "🏆" : "🔒"}
+                  </span>
+                  <div>
+                    <h3 className="font-bold text-slate-950 dark:text-white">
+                      {achievement.name}
+                    </h3>
+                    <p className="mt-1 text-sm">{achievement.description}</p>
+                    <p className="mt-2 text-xs font-semibold uppercase tracking-wider">
+                      {achievement.unlockedAt
+                        ? `Unlocked ${date.format(new Date(achievement.unlockedAt))}`
+                        : "Locked"}
+                    </p>
+                  </div>
+                </div>
+              </li>
+            );
+          })}
+        </ul>
+      </section>
 
       <section className="mt-8" aria-labelledby="recent-heading">
         <div className="flex items-baseline justify-between gap-4">

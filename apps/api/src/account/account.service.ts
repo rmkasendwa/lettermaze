@@ -13,6 +13,7 @@ import { promisify } from "node:util";
 import type { Request, Response } from "express";
 import { PrismaService } from "../database/prisma.service";
 import { calculateDailyStreak } from "./streak";
+import { ACHIEVEMENTS, eligibleAchievementIds } from "./achievements";
 
 const scrypt = promisify(scryptCallback);
 const COOKIE = "lettermaze_session";
@@ -98,7 +99,7 @@ export class AccountService {
     importId: string,
     local: StatisticsInput,
   ) {
-    return this.prisma.$transaction(async (transaction) => {
+    const statistics = await this.prisma.$transaction(async (transaction) => {
       const imported = await transaction.statisticImport.findUnique({
         where: { id: importId },
       });
@@ -139,6 +140,8 @@ export class AccountService {
       }
       return this.getStatistics(userId, transaction);
     });
+    await this.reconcileAchievements(userId);
+    return statistics;
   }
 
   async getStatistics(
@@ -252,6 +255,45 @@ export class AccountService {
         },
       });
     }
+    await this.reconcileAchievements(userId);
+  }
+
+  async reconcileAchievements(userId: string) {
+    const [statistics, completions] = await Promise.all([
+      this.getStatistics(userId),
+      this.prisma.dailyCompletion.findMany({
+        where: { userId },
+        select: { localDate: true },
+        orderBy: { localDate: "asc" },
+      }),
+    ]);
+    const streak = calculateDailyStreak(
+      completions.map(({ localDate }) => localDate),
+      completions.at(-1)?.localDate ?? "1970-01-01",
+    );
+    const eligible = eligibleAchievementIds({
+      highestScore: statistics.highestScore,
+      longestWord: statistics.longestWord.length,
+      gamesPlayed: statistics.gamesPlayed,
+      longestStreak: streak.longest,
+    });
+    if (eligible.length) {
+      await this.prisma.userAchievement.createMany({
+        data: eligible.map((achievementId) => ({ userId, achievementId })),
+        skipDuplicates: true,
+      });
+    }
+    const unlocked = await this.prisma.userAchievement.findMany({
+      where: { userId },
+      select: { achievementId: true, unlockedAt: true },
+    });
+    const unlockedById = new Map(
+      unlocked.map((item) => [item.achievementId, item.unlockedAt]),
+    );
+    return ACHIEVEMENTS.map((achievement) => ({
+      ...achievement,
+      unlockedAt: unlockedById.get(achievement.id) ?? null,
+    }));
   }
 
   private readonly gameSummarySelect = {
@@ -301,35 +343,37 @@ export class AccountService {
   }
 
   async getProfile(userId: string, localToday: string) {
-    const [user, statistics, recentGames, daily, streak] = await Promise.all([
-      this.prisma.user.findUniqueOrThrow({
-        where: { id: userId },
-        select: { id: true, name: true, email: true, createdAt: true },
-      }),
-      this.getStatistics(userId),
-      this.prisma.completedGame.findMany({
-        where: { userId },
-        orderBy: { completedAt: "desc" },
-        take: 10,
-        select: {
-          id: true,
-          score: true,
-          wordsFound: true,
-          longestWord: true,
-          isDaily: true,
-          puzzleId: true,
-          completedAt: true,
-        },
-      }),
-      this.prisma.completedGame.aggregate({
-        where: { userId, isDaily: true },
-        _count: { id: true },
-        _sum: { score: true, wordsFound: true },
-        _max: { score: true },
-        _avg: { score: true },
-      }),
-      this.getDailyStreak(userId, localToday),
-    ]);
+    const [user, statistics, recentGames, daily, streak, achievements] =
+      await Promise.all([
+        this.prisma.user.findUniqueOrThrow({
+          where: { id: userId },
+          select: { id: true, name: true, email: true, createdAt: true },
+        }),
+        this.getStatistics(userId),
+        this.prisma.completedGame.findMany({
+          where: { userId },
+          orderBy: { completedAt: "desc" },
+          take: 10,
+          select: {
+            id: true,
+            score: true,
+            wordsFound: true,
+            longestWord: true,
+            isDaily: true,
+            puzzleId: true,
+            completedAt: true,
+          },
+        }),
+        this.prisma.completedGame.aggregate({
+          where: { userId, isDaily: true },
+          _count: { id: true },
+          _sum: { score: true, wordsFound: true },
+          _max: { score: true },
+          _avg: { score: true },
+        }),
+        this.getDailyStreak(userId, localToday),
+        this.reconcileAchievements(userId),
+      ]);
     return {
       user,
       statistics,
@@ -342,6 +386,7 @@ export class AccountService {
         streak,
       },
       recentGames,
+      achievements,
     };
   }
 
