@@ -32,6 +32,7 @@ const statisticsSchema = z.object({
   averageScore: z.number(),
   totalScore: z.number(),
 });
+const recordedGameSchema = z.object({ accepted: z.literal(true) });
 type User = z.infer<typeof userSchema>;
 
 interface AccountContextValue {
@@ -66,8 +67,8 @@ export function AccountProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
   const refresh = useCallback(async () => {
     const session = await apiRequest("/account/session", sessionSchema);
-    setUser(session.user);
     if (session.user) await syncGuestStatistics();
+    setUser(session.user);
     setLoading(false);
   }, []);
   useEffect(() => {
@@ -75,6 +76,20 @@ export function AccountProvider({ children }: { children: ReactNode }) {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     void refresh().catch(() => setLoading(false));
   }, [refresh]);
+  useEffect(() => {
+    if (!user) return;
+    const recordGame = (event: Event) => {
+      const detail = (event as CustomEvent<unknown>).detail;
+      void apiRequest("/account/games", recordedGameSchema, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(detail),
+      }).catch(() => undefined);
+    };
+    window.addEventListener("lettermaze:game-completed", recordGame);
+    return () =>
+      window.removeEventListener("lettermaze:game-completed", recordGame);
+  }, [user]);
   const logout = async () => {
     await apiRequest("/account/logout", z.object({ success: z.boolean() }), {
       method: "POST",

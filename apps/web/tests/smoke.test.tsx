@@ -19,6 +19,7 @@ describe("project foundation", () => {
       home: "/",
       play: "/play",
       daily: "/daily",
+      profile: "/profile",
       settings: "/settings",
     }));
   it("merges conflicting utility classes", () =>

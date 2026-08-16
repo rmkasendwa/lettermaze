@@ -146,6 +146,107 @@ export class AccountService {
     };
   }
 
+  async recordCompletedGame(
+    userId: string,
+    result: { score: number; words: string[]; puzzleId?: string },
+  ) {
+    const longestWord = result.words.reduce(
+      (longest, word) => (word.length > longest.length ? word : longest),
+      "",
+    );
+    await this.prisma.$transaction([
+      this.prisma.completedGame.create({
+        data: {
+          userId,
+          score: result.score,
+          wordsFound: result.words.length,
+          longestWord,
+          isDaily: Boolean(result.puzzleId),
+          puzzleId: result.puzzleId,
+        },
+      }),
+      this.prisma.playerStatistics.upsert({
+        where: { userId },
+        create: {
+          userId,
+          gamesPlayed: 1,
+          totalWordsFound: result.words.length,
+          highestScore: result.score,
+          longestWord,
+          totalScore: result.score,
+        },
+        update: {
+          gamesPlayed: { increment: 1 },
+          totalWordsFound: { increment: result.words.length },
+          totalScore: { increment: result.score },
+        },
+      }),
+    ]);
+    // Prisma cannot conditionally update bests in the upsert above, so apply them
+    // after the atomic additive update.
+    const current = await this.prisma.playerStatistics.findUniqueOrThrow({
+      where: { userId },
+    });
+    if (
+      result.score > current.highestScore ||
+      longestWord.length > current.longestWord.length
+    ) {
+      await this.prisma.playerStatistics.update({
+        where: { userId },
+        data: {
+          highestScore: Math.max(result.score, current.highestScore),
+          longestWord:
+            longestWord.length > current.longestWord.length
+              ? longestWord
+              : current.longestWord,
+        },
+      });
+    }
+  }
+
+  async getProfile(userId: string) {
+    const [user, statistics, recentGames, daily] = await Promise.all([
+      this.prisma.user.findUniqueOrThrow({
+        where: { id: userId },
+        select: { id: true, name: true, email: true, createdAt: true },
+      }),
+      this.getStatistics(userId),
+      this.prisma.completedGame.findMany({
+        where: { userId },
+        orderBy: { completedAt: "desc" },
+        take: 10,
+        select: {
+          id: true,
+          score: true,
+          wordsFound: true,
+          longestWord: true,
+          isDaily: true,
+          puzzleId: true,
+          completedAt: true,
+        },
+      }),
+      this.prisma.completedGame.aggregate({
+        where: { userId, isDaily: true },
+        _count: { id: true },
+        _sum: { score: true, wordsFound: true },
+        _max: { score: true },
+        _avg: { score: true },
+      }),
+    ]);
+    return {
+      user,
+      statistics,
+      dailyStatistics: {
+        gamesPlayed: daily._count.id,
+        totalScore: daily._sum.score ?? 0,
+        totalWordsFound: daily._sum.wordsFound ?? 0,
+        highestScore: daily._max.score ?? 0,
+        averageScore: daily._avg.score ?? 0,
+      },
+      recentGames,
+    };
+  }
+
   private readCookie(header: string | undefined, name: string) {
     return header
       ?.split(";")

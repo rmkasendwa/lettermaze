@@ -28,6 +28,11 @@ const syncSchema = z.object({
     totalScore: z.number().int().nonnegative(),
   }),
 });
+const completedGameSchema = z.object({
+  score: z.number().int().nonnegative(),
+  words: z.array(z.string().trim().min(1).max(100)).max(500),
+  puzzleId: z.string().trim().min(1).max(40).optional(),
+});
 
 @Controller("account")
 export class AccountController {
@@ -111,5 +116,20 @@ export class AccountController {
       parsed.data.importId,
       parsed.data.statistics,
     );
+  }
+
+  @Post("games")
+  async recordGame(@Req() request: Request, @Body() body: unknown) {
+    const user = await this.accounts.requireUser(request);
+    const parsed = completedGameSchema.safeParse(body);
+    if (!parsed.success) throw new BadRequestException("Invalid game result.");
+    await this.accounts.recordCompletedGame(user.id, parsed.data);
+    return { accepted: true };
+  }
+
+  @Get("profile")
+  async profile(@Req() request: Request) {
+    const user = await this.accounts.requireUser(request);
+    return this.accounts.getProfile(user.id);
   }
 }

@@ -9,15 +9,31 @@ datasource db {
 }
 
 model User {
-  id        String   @id @default(cuid())
-  email     String?  @unique
-  name      String?
-  passwordHash String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  sessions  Session[]
-  statistics PlayerStatistics?
+  id               String            @id @default(cuid())
+  email            String?           @unique
+  name             String?
+  passwordHash     String?
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  sessions         Session[]
+  statistics       PlayerStatistics?
   statisticImports StatisticImport[]
+  completedGames   CompletedGame[]
+}
+
+model CompletedGame {
+  id          String   @id @default(cuid())
+  userId      String
+  score       Int
+  wordsFound  Int
+  longestWord String   @default("")
+  isDaily     Boolean  @default(false)
+  puzzleId    String?
+  completedAt DateTime @default(now())
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, completedAt])
+  @@index([userId, isDaily])
 }
 
 model Session {

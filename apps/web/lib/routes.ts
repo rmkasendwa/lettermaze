@@ -3,4 +3,5 @@ export const routes = {
   play: "/play",
   daily: "/daily",
   settings: "/settings",
+  profile: "/profile",
 } as const;

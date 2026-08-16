@@ -131,17 +131,25 @@ export function PlayGame({
     }
     submissionsInitialized.current = true;
   }
-  const [foundWords, setFoundWords] = useState<string[]>(initialSession?.foundWords ?? []);
+  const [foundWords, setFoundWords] = useState<string[]>(
+    initialSession?.foundWords ?? [],
+  );
   const [selectedIndexes, setSelectedIndexes] = useState<readonly number[]>([]);
   const [score, setScore] = useState(initialSession?.score ?? 0);
-  const [wordsFound, setWordsFound] = useState(initialSession?.foundWords.length ?? 0);
+  const [wordsFound, setWordsFound] = useState(
+    initialSession?.foundWords.length ?? 0,
+  );
   const [scoreUpdate, setScoreUpdate] = useState({ points: 0, sequence: 0 });
-  const [remainingSeconds, setRemainingSeconds] = useState(Math.ceil(restoredRemainingMs / 1000));
+  const [remainingSeconds, setRemainingSeconds] = useState(
+    Math.ceil(restoredRemainingMs / 1000),
+  );
   const [pauseReason, setPauseReason] = useState<"manual" | "hidden" | null>(
     null,
   );
   const isPaused = pauseReason !== null;
-  const [isGameOver, setIsGameOver] = useState(duration === 0 || restoredRemainingMs === 0);
+  const [isGameOver, setIsGameOver] = useState(
+    duration === 0 || restoredRemainingMs === 0,
+  );
   const [playerStatistics, setPlayerStatistics] = useState<PlayerStatistics>(
     emptyPlayerStatistics,
   );
@@ -167,8 +175,17 @@ export function PlayGame({
         words: foundWordsRef.current,
       }),
     );
+    window.dispatchEvent(
+      new CustomEvent("lettermaze:game-completed", {
+        detail: {
+          score: scoreRef.current,
+          words: foundWordsRef.current,
+          puzzleId: dailyChallengeDate,
+        },
+      }),
+    );
     onGameEnd?.({ score: scoreRef.current, wordsFound: wordsFoundRef.current });
-  }, [onGameEnd]);
+  }, [dailyChallengeDate, onGameEnd]);
 
   const replay = () => {
     discardActiveGame(browserStorage);
@@ -198,7 +215,9 @@ export function PlayGame({
         wordsFound: foundWords.length,
         dailyChallengeDate,
       });
-      setShareStatus(outcome === "shared" ? "Result shared." : "Result copied to clipboard.");
+      setShareStatus(
+        outcome === "shared" ? "Result shared." : "Result copied to clipboard.",
+      );
     } catch (error) {
       if (error instanceof DOMException && error.name === "AbortError") return;
       setShareStatus("Unable to share this result.");

@@ -8,6 +8,7 @@ import { cn } from "@/lib/utils";
 const links = [
   { href: routes.play, label: "Play" },
   { href: routes.daily, label: "Daily" },
+  { href: routes.profile, label: "Profile" },
   { href: routes.settings, label: "Settings" },
 ];
 export function AppNavigation() {
