@@ -114,7 +114,10 @@ export function PlayGame({
   const [wordsFound, setWordsFound] = useState(0);
   const [scoreUpdate, setScoreUpdate] = useState({ points: 0, sequence: 0 });
   const [remainingSeconds, setRemainingSeconds] = useState(duration);
-  const [isPaused, setIsPaused] = useState(false);
+  const [pauseReason, setPauseReason] = useState<"manual" | "hidden" | null>(
+    null,
+  );
+  const isPaused = pauseReason !== null;
   const [isGameOver, setIsGameOver] = useState(duration === 0);
   const [playerStatistics, setPlayerStatistics] = useState<PlayerStatistics>(
     emptyPlayerStatistics,
@@ -156,7 +159,7 @@ export function PlayGame({
     setSelectedIndexes([]);
     setScoreUpdate({ points: 0, sequence: 0 });
     setRemainingSeconds(duration);
-    setIsPaused(false);
+    setPauseReason(null);
     setIsGameOver(duration === 0);
   };
 
@@ -181,7 +184,10 @@ export function PlayGame({
 
   useEffect(() => {
     const handleVisibilityChange = () => {
-      if (document.hidden && !isGameOver) setIsPaused(true);
+      if (document.hidden && !isGameOver) {
+        setSelectedIndexes([]);
+        setPauseReason("hidden");
+      }
     };
     document.addEventListener("visibilitychange", handleVisibilityChange);
     return () =>
@@ -389,7 +395,10 @@ export function PlayGame({
         </span>
         <button
           className="min-h-11 rounded-lg border border-slate-300 bg-white px-4 font-semibold dark:border-slate-700 dark:bg-slate-900"
-          onClick={() => setIsPaused((paused) => !paused)}
+          onClick={() => {
+            if (!isPaused) setSelectedIndexes([]);
+            setPauseReason(isPaused ? null : "manual");
+          }}
           type="button"
         >
           {isPaused ? "Resume" : "Pause"}
@@ -419,13 +428,51 @@ export function PlayGame({
           </div>
         ) : null}
       </div>
-      <Board
-        cells={cells}
-        disabled={isPaused || isGameOver}
-        size={size}
-        onSelectionChange={setSelectedIndexes}
-        onSelectionComplete={submitPath}
-      />
+      <div className="relative aspect-square">
+        {!isPaused ? (
+          <div>
+            <Board
+              cells={cells}
+              disabled={isPaused || isGameOver}
+              size={size}
+              onSelectionChange={setSelectedIndexes}
+              onSelectionComplete={submitPath}
+            />
+          </div>
+        ) : null}
+        {isPaused ? (
+          <div
+            aria-labelledby="pause-heading"
+            aria-modal="true"
+            className="absolute inset-0 z-20 flex items-center justify-center rounded-xl border border-slate-300 bg-slate-950 p-6 text-center text-white shadow-lg dark:border-slate-700"
+            data-testid="pause-overlay"
+            role="dialog"
+          >
+            <div>
+              <p className="text-sm font-semibold uppercase tracking-[0.2em] text-sky-300">
+                Board hidden
+              </p>
+              <h2 className="mt-2 text-3xl font-bold" id="pause-heading">
+                Game paused
+              </h2>
+              <p className="mt-3 text-sm text-slate-300">
+                {pauseReason === "hidden"
+                  ? "The game paused because this tab was hidden."
+                  : "You paused the game."}
+              </p>
+              {pauseReason === "manual" ? (
+                <button
+                  className="mt-6 min-h-12 rounded-xl bg-sky-600 px-6 font-bold text-white transition-colors hover:bg-sky-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-400"
+                  onClick={() => setPauseReason(null)}
+                  type="button"
+                >
+                  Resume game
+                </button>
+              ) : null}
+            </div>
+          </div>
+        ) : null}
+      </div>
       <div className="mt-4">
         <AcceptedWordsPanel
           headingId="accepted-words-heading"

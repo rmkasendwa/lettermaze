@@ -200,6 +200,11 @@ describe("PlayGame", () => {
 
     expect(screen.getByTestId("timer")).toHaveTextContent("0:02");
     fireEvent.click(screen.getByRole("button", { name: "Pause" }));
+    expect(screen.getByRole("dialog", { name: "Game paused" })).toBeVisible();
+    expect(screen.getByTestId("pause-overlay")).toHaveTextContent(
+      "You paused the game.",
+    );
+    expect(screen.queryByRole("grid")).not.toBeInTheDocument();
     act(() => vi.advanceTimersByTime(3000));
     expect(screen.getByTestId("timer")).toHaveTextContent("0:02");
 
@@ -229,5 +234,26 @@ describe("PlayGame", () => {
     expect(screen.getByTestId("words-found")).toHaveTextContent("0");
     expect(screen.getByRole("grid")).toHaveAttribute("aria-disabled", "false");
     vi.useRealTimers();
+  });
+
+  it("explains an automatic pause when the tab is hidden", () => {
+    render(<PlayGame cells={cells} size={5} />);
+    Object.defineProperty(document, "hidden", {
+      configurable: true,
+      value: true,
+    });
+    fireEvent(document, new Event("visibilitychange"));
+
+    expect(screen.getByTestId("pause-overlay")).toHaveTextContent(
+      "The game paused because this tab was hidden.",
+    );
+    expect(
+      screen.queryByRole("button", { name: "Resume game" }),
+    ).not.toBeInTheDocument();
+
+    Object.defineProperty(document, "hidden", {
+      configurable: true,
+      value: false,
+    });
   });
 });
