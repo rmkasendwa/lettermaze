@@ -128,7 +128,12 @@ export function DailyChallenge({ puzzleId }: { puzzleId: string }) {
         ) : null}
       </div>
       <div className="w-full max-w-[min(42rem,calc(100dvh-8rem))]">
-        <PlayGame cells={board.cells} size={board.size} onGameEnd={finish} />
+        <PlayGame
+          cells={board.cells}
+          dailyChallengeDate={puzzleId}
+          size={board.size}
+          onGameEnd={finish}
+        />
       </div>
       <LeaderboardPanel leaderboard={leaderboard} />
     </main>

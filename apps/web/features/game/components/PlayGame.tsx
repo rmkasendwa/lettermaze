@@ -22,6 +22,7 @@ import {
   saveActiveGame,
   type ActiveGameSession,
 } from "../session";
+import { shareResult } from "../share";
 
 export interface PlayGameProps {
   cells: readonly string[];
@@ -30,6 +31,7 @@ export interface PlayGameProps {
   onGameEnd?: (result: { score: number; wordsFound: number }) => void;
   difficulty?: Difficulty;
   initialSession?: ActiveGameSession;
+  dailyChallengeDate?: string;
 }
 
 function AcceptedWordsPanel({
@@ -100,6 +102,7 @@ export function PlayGame({
   onGameEnd,
   difficulty,
   initialSession,
+  dailyChallengeDate,
 }: PlayGameProps) {
   const duration = Math.max(0, Math.floor(durationSeconds));
   const restoredRemainingMs = initialSession
@@ -142,6 +145,7 @@ export function PlayGame({
   const [playerStatistics, setPlayerStatistics] = useState<PlayerStatistics>(
     emptyPlayerStatistics,
   );
+  const [shareStatus, setShareStatus] = useState("");
   const scoreRef = useRef(initialSession?.score ?? 0);
   const wordsFoundRef = useRef(initialSession?.foundWords.length ?? 0);
   const foundWordsRef = useRef<string[]>(initialSession?.foundWords ?? []);
@@ -183,6 +187,22 @@ export function PlayGame({
     setRemainingSeconds(duration);
     setPauseReason(null);
     setIsGameOver(duration === 0);
+    setShareStatus("");
+  };
+
+  const shareGameResult = async () => {
+    setShareStatus("");
+    try {
+      const outcome = await shareResult({
+        score,
+        wordsFound: foundWords.length,
+        dailyChallengeDate,
+      });
+      setShareStatus(outcome === "shared" ? "Result shared." : "Result copied to clipboard.");
+    } catch (error) {
+      if (error instanceof DOMException && error.name === "AbortError") return;
+      setShareStatus("Unable to share this result.");
+    }
   };
 
   useEffect(() => {
@@ -376,13 +396,27 @@ export function PlayGame({
             )}
           </div>
 
-          <button
-            className="min-h-12 w-full rounded-xl bg-sky-600 px-5 font-bold text-white shadow-sm transition-colors hover:bg-sky-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-600"
-            onClick={replay}
-            type="button"
-          >
-            Play again
-          </button>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <button
+              className="min-h-12 rounded-xl bg-sky-600 px-5 font-bold text-white shadow-sm transition-colors hover:bg-sky-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-600"
+              onClick={() => void shareGameResult()}
+              type="button"
+            >
+              Share result
+            </button>
+            <button
+              className="min-h-12 rounded-xl border border-slate-300 bg-white px-5 font-bold shadow-sm transition-colors hover:bg-slate-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-600 dark:border-slate-700 dark:bg-slate-900 dark:hover:bg-slate-800"
+              onClick={replay}
+              type="button"
+            >
+              Play again
+            </button>
+          </div>
+          {shareStatus ? (
+            <p className="text-center text-sm font-medium" role="status">
+              {shareStatus}
+            </p>
+          ) : null}
         </div>
       </section>
     );
