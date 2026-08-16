@@ -30,6 +30,20 @@ body {
   }
 }
 
+@keyframes personal-best-celebration {
+  0% {
+    opacity: 0;
+    transform: translateY(0.75rem) scale(0.96);
+  }
+  65% {
+    transform: translateY(0) scale(1.02);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
 @keyframes tile-select {
   50% {
     transform: scale(0.9);
@@ -70,9 +84,14 @@ body {
   animation: score-points 700ms ease-out forwards;
 }
 
+.personal-best-celebration {
+  animation: personal-best-celebration 600ms ease-out;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .score-update,
   .score-points,
+  .personal-best-celebration,
   .game-tile-selected,
   .game-tile-success {
     animation: none;

@@ -10,7 +10,9 @@ const statisticsSchema = z.object({
   gamesPlayed: z.number(),
   totalWordsFound: z.number(),
   highestScore: z.number(),
+  mostWordsFound: z.number(),
   longestWord: z.string(),
+  bestDailyScore: z.number(),
   averageScore: z.number(),
   totalScore: z.number(),
 });
@@ -214,8 +216,16 @@ export default function ProfilePage() {
           <dl className="mt-4 grid grid-cols-2 gap-3">
             <Stat label="Highest score" value={statistics.highestScore} />
             <Stat
+              label="Most words in one game"
+              value={statistics.mostWordsFound}
+            />
+            <Stat
               label="Longest word"
               value={statistics.longestWord.toUpperCase() || "—"}
+            />
+            <Stat
+              label="Best daily challenge"
+              value={statistics.bestDailyScore}
             />
           </dl>
         </section>

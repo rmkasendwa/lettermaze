@@ -21,7 +21,9 @@ export interface StatisticsInput {
   gamesPlayed: number;
   totalWordsFound: number;
   highestScore: number;
+  mostWordsFound: number;
   longestWord: string;
+  bestDailyScore: number;
   totalScore: number;
 }
 
@@ -117,10 +119,18 @@ export class AccountService {
               current?.highestScore ?? 0,
               local.highestScore,
             ),
+            mostWordsFound: Math.max(
+              current?.mostWordsFound ?? 0,
+              local.mostWordsFound,
+            ),
             longestWord:
               local.longestWord.length > (current?.longestWord.length ?? 0)
                 ? local.longestWord
                 : current?.longestWord,
+            bestDailyScore: Math.max(
+              current?.bestDailyScore ?? 0,
+              local.bestDailyScore,
+            ),
           },
         });
       } else if (imported.userId !== userId) {
@@ -141,7 +151,9 @@ export class AccountService {
       gamesPlayed: 0,
       totalWordsFound: 0,
       highestScore: 0,
+      mostWordsFound: 0,
       longestWord: "",
+      bestDailyScore: 0,
       totalScore: 0,
     };
     return {
@@ -185,7 +197,9 @@ export class AccountService {
           gamesPlayed: 1,
           totalWordsFound: result.words.length,
           highestScore: result.score,
+          mostWordsFound: result.words.length,
           longestWord,
+          bestDailyScore: result.puzzleId ? result.score : 0,
           totalScore: result.score,
         },
         update: {
@@ -202,16 +216,22 @@ export class AccountService {
     });
     if (
       result.score > current.highestScore ||
+      result.words.length > current.mostWordsFound ||
+      (Boolean(result.puzzleId) && result.score > current.bestDailyScore) ||
       longestWord.length > current.longestWord.length
     ) {
       await this.prisma.playerStatistics.update({
         where: { userId },
         data: {
           highestScore: Math.max(result.score, current.highestScore),
+          mostWordsFound: Math.max(result.words.length, current.mostWordsFound),
           longestWord:
             longestWord.length > current.longestWord.length
               ? longestWord
               : current.longestWord,
+          bestDailyScore: result.puzzleId
+            ? Math.max(result.score, current.bestDailyScore)
+            : current.bestDailyScore,
         },
       });
     }
@@ -239,7 +259,7 @@ export class AccountService {
     });
     const hasMore = games.length > limit;
     const items = hasMore ? games.slice(0, limit) : games;
-    return { items, nextCursor: hasMore ? items.at(-1)?.id ?? null : null };
+    return { items, nextCursor: hasMore ? (items.at(-1)?.id ?? null) : null };
   }
 
   async getGame(userId: string, id: string) {

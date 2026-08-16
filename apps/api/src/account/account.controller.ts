@@ -26,7 +26,9 @@ const syncSchema = z.object({
     gamesPlayed: z.number().int().nonnegative(),
     totalWordsFound: z.number().int().nonnegative(),
     highestScore: z.number().int().nonnegative(),
+    mostWordsFound: z.number().int().nonnegative(),
     longestWord: z.string().max(100),
+    bestDailyScore: z.number().int().nonnegative(),
     totalScore: z.number().int().nonnegative(),
   }),
 });

@@ -56,7 +56,9 @@ model PlayerStatistics {
   gamesPlayed     Int    @default(0)
   totalWordsFound Int    @default(0)
   highestScore    Int    @default(0)
+  mostWordsFound  Int    @default(0)
   longestWord     String @default("")
+  bestDailyScore  Int    @default(0)
   totalScore      Int    @default(0)
   user            User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 }

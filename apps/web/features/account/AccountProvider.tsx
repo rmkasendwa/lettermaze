@@ -28,7 +28,9 @@ const statisticsSchema = z.object({
   gamesPlayed: z.number(),
   totalWordsFound: z.number(),
   highestScore: z.number(),
+  mostWordsFound: z.number(),
   longestWord: z.string(),
+  bestDailyScore: z.number(),
   averageScore: z.number(),
   totalScore: z.number(),
 });

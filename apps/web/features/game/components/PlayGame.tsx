@@ -11,7 +11,10 @@ import {
 } from "@lettermaze/game";
 import {
   emptyPlayerStatistics,
+  getNewPersonalBests,
+  getPlayerStatistics,
   recordCompletedGame,
+  type PersonalBest,
   type PlayerStatistics,
 } from "@/features/player";
 import { browserStorage } from "@/lib/storage";
@@ -154,6 +157,7 @@ export function PlayGame({
     emptyPlayerStatistics,
   );
   const [shareStatus, setShareStatus] = useState("");
+  const [newPersonalBests, setNewPersonalBests] = useState<PersonalBest[]>([]);
   const scoreRef = useRef(initialSession?.score ?? 0);
   const wordsFoundRef = useRef(initialSession?.foundWords.length ?? 0);
   const foundWordsRef = useRef<string[]>(initialSession?.foundWords ?? []);
@@ -169,12 +173,14 @@ export function PlayGame({
     setRemainingSeconds(0);
     setIsGameOver(true);
     setSelectedIndexes([]);
-    setPlayerStatistics(
-      recordCompletedGame(browserStorage, {
-        score: scoreRef.current,
-        words: foundWordsRef.current,
-      }),
-    );
+    const result = {
+      score: scoreRef.current,
+      words: foundWordsRef.current,
+      isDaily: Boolean(dailyChallengeDate),
+    };
+    const currentStatistics = getPlayerStatistics(browserStorage);
+    setNewPersonalBests(getNewPersonalBests(currentStatistics, result));
+    setPlayerStatistics(recordCompletedGame(browserStorage, result));
     window.dispatchEvent(
       new CustomEvent("lettermaze:game-completed", {
         detail: {
@@ -207,6 +213,7 @@ export function PlayGame({
     setPauseReason(null);
     setIsGameOver(duration === 0);
     setShareStatus("");
+    setNewPersonalBests([]);
   };
 
   const shareGameResult = async () => {
@@ -341,6 +348,31 @@ export function PlayGame({
         </div>
 
         <div className="space-y-6 p-6 sm:p-8">
+          {newPersonalBests.length > 0 ? (
+            <div
+              aria-live="polite"
+              className="personal-best-celebration rounded-2xl border border-amber-300 bg-amber-50 p-5 text-center text-amber-950 shadow-sm dark:border-amber-700 dark:bg-amber-950 dark:text-amber-100"
+              data-testid="personal-best-celebration"
+              role="status"
+            >
+              <p className="text-3xl" aria-hidden="true">
+                🏆
+              </p>
+              <h3 className="mt-1 text-xl font-black">New personal best!</h3>
+              <ul className="mt-2 space-y-1 text-sm font-semibold">
+                {newPersonalBests.map((record) => (
+                  <li key={record}>
+                    {record === "highestScore" && `Highest score: ${score}`}
+                    {record === "mostWordsFound" &&
+                      `Most words in one game: ${foundWords.length}`}
+                    {record === "longestWord" && `Longest word: ${longestWord}`}
+                    {record === "bestDailyScore" &&
+                      `Best daily challenge: ${score} points`}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ) : null}
           <div className="grid grid-cols-2 gap-3">
             <div className="rounded-xl bg-slate-100 p-4 dark:bg-slate-800">
               <p className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
@@ -370,7 +402,9 @@ export function PlayGame({
                 ["Games played", playerStatistics.gamesPlayed],
                 ["Total words", playerStatistics.totalWordsFound],
                 ["Highest score", playerStatistics.highestScore],
+                ["Most words", playerStatistics.mostWordsFound],
                 ["Longest word", playerStatistics.longestWord || "—"],
+                ["Best daily", playerStatistics.bestDailyScore],
                 ["Average score", playerStatistics.averageScore.toFixed(1)],
               ].map(([label, value]) => (
                 <div
