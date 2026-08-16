@@ -16,12 +16,20 @@ import {
 } from "@/features/player";
 import { browserStorage } from "@/lib/storage";
 import { Board } from "./Board";
+import type { Difficulty } from "@lettermaze/game";
+import {
+  discardActiveGame,
+  saveActiveGame,
+  type ActiveGameSession,
+} from "../session";
 
 export interface PlayGameProps {
   cells: readonly string[];
   size: number;
   durationSeconds?: number;
   onGameEnd?: (result: { score: number; wordsFound: number }) => void;
+  difficulty?: Difficulty;
+  initialSession?: ActiveGameSession;
 }
 
 function AcceptedWordsPanel({
@@ -90,8 +98,13 @@ export function PlayGame({
   size,
   durationSeconds = 180,
   onGameEnd,
+  difficulty,
+  initialSession,
 }: PlayGameProps) {
   const duration = Math.max(0, Math.floor(durationSeconds));
+  const restoredRemainingMs = initialSession
+    ? Math.max(0, initialSession.expiresAt - Date.now())
+    : duration * 1000;
   const playableWords = useMemo(() => {
     if (
       cells.length !== size * size ||
@@ -108,30 +121,38 @@ export function PlayGame({
   const submissions = useRef(
     new WordSubmissionTracker(createWordDictionary(DEFAULT_PLAYABLE_WORDS)),
   );
-  const [foundWords, setFoundWords] = useState<string[]>([]);
+  const submissionsInitialized = useRef(false);
+  if (!submissionsInitialized.current) {
+    for (const word of initialSession?.foundWords ?? []) {
+      submissions.current.submit(word);
+    }
+    submissionsInitialized.current = true;
+  }
+  const [foundWords, setFoundWords] = useState<string[]>(initialSession?.foundWords ?? []);
   const [selectedIndexes, setSelectedIndexes] = useState<readonly number[]>([]);
-  const [score, setScore] = useState(0);
-  const [wordsFound, setWordsFound] = useState(0);
+  const [score, setScore] = useState(initialSession?.score ?? 0);
+  const [wordsFound, setWordsFound] = useState(initialSession?.foundWords.length ?? 0);
   const [scoreUpdate, setScoreUpdate] = useState({ points: 0, sequence: 0 });
-  const [remainingSeconds, setRemainingSeconds] = useState(duration);
+  const [remainingSeconds, setRemainingSeconds] = useState(Math.ceil(restoredRemainingMs / 1000));
   const [pauseReason, setPauseReason] = useState<"manual" | "hidden" | null>(
     null,
   );
   const isPaused = pauseReason !== null;
-  const [isGameOver, setIsGameOver] = useState(duration === 0);
+  const [isGameOver, setIsGameOver] = useState(duration === 0 || restoredRemainingMs === 0);
   const [playerStatistics, setPlayerStatistics] = useState<PlayerStatistics>(
     emptyPlayerStatistics,
   );
-  const scoreRef = useRef(0);
-  const wordsFoundRef = useRef(0);
-  const foundWordsRef = useRef<string[]>([]);
-  const deadlineRef = useRef(0);
-  const remainingMsRef = useRef(duration * 1000);
+  const scoreRef = useRef(initialSession?.score ?? 0);
+  const wordsFoundRef = useRef(initialSession?.foundWords.length ?? 0);
+  const foundWordsRef = useRef<string[]>(initialSession?.foundWords ?? []);
+  const deadlineRef = useRef(initialSession?.expiresAt ?? 0);
+  const remainingMsRef = useRef(restoredRemainingMs);
   const endedRef = useRef(false);
 
   const endGame = useCallback(() => {
     if (endedRef.current) return;
     endedRef.current = true;
+    discardActiveGame(browserStorage);
     remainingMsRef.current = 0;
     setRemainingSeconds(0);
     setIsGameOver(true);
@@ -146,6 +167,7 @@ export function PlayGame({
   }, [onGameEnd]);
 
   const replay = () => {
+    discardActiveGame(browserStorage);
     submissions.current.reset();
     scoreRef.current = 0;
     wordsFoundRef.current = 0;
@@ -170,7 +192,9 @@ export function PlayGame({
     }
     if (isPaused || isGameOver) return;
 
-    deadlineRef.current = Date.now() + remainingMsRef.current;
+    if (deadlineRef.current <= Date.now()) {
+      deadlineRef.current = Date.now() + remainingMsRef.current;
+    }
     const update = () => {
       const remainingMs = Math.max(0, deadlineRef.current - Date.now());
       remainingMsRef.current = remainingMs;
@@ -181,6 +205,32 @@ export function PlayGame({
     const timer = window.setInterval(update, 100);
     return () => window.clearInterval(timer);
   }, [duration, endGame, isGameOver, isPaused]);
+
+  const persistGame = useCallback(() => {
+    if (!difficulty || isGameOver || endedRef.current) return;
+    const expiresAt = isPaused
+      ? Date.now() + remainingMsRef.current
+      : deadlineRef.current;
+    saveActiveGame(browserStorage, {
+      version: 1,
+      difficulty,
+      cells: [...cells] as Letter[],
+      size,
+      foundWords: [...foundWordsRef.current],
+      score: scoreRef.current,
+      expiresAt,
+    });
+  }, [cells, difficulty, isGameOver, isPaused, size]);
+
+  useEffect(() => {
+    persistGame();
+    const handlePageHide = () => persistGame();
+    window.addEventListener("pagehide", handlePageHide);
+    return () => {
+      persistGame();
+      window.removeEventListener("pagehide", handlePageHide);
+    };
+  }, [persistGame]);
 
   useEffect(() => {
     const handleVisibilityChange = () => {
@@ -208,6 +258,7 @@ export function PlayGame({
     setWordsFound(wordsFoundRef.current);
     setFoundWords((words) => [...words, acceptedWord]);
     setScoreUpdate((update) => ({ points, sequence: update.sequence + 1 }));
+    queueMicrotask(persistGame);
     return true;
   };
 

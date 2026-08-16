@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useSyncExternalStore } from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
 import {
   DIFFICULTY_CONFIGS,
   DIFFICULTY_LEVELS,
@@ -11,6 +11,11 @@ import {
 } from "@lettermaze/game";
 import { browserStorage } from "@/lib/storage";
 import { PlayGame } from "./PlayGame";
+import {
+  discardActiveGame,
+  loadActiveGame,
+  type ActiveGameSession,
+} from "../session";
 
 export const DIFFICULTY_STORAGE_KEY = "lettermaze.preferredDifficulty";
 
@@ -36,11 +41,27 @@ export function GameSetup() {
   const [selectedDifficulty, setSelectedDifficulty] =
     useState<Difficulty | null>(null);
   const difficulty = selectedDifficulty ?? preferredDifficulty;
+  const [restoredSession, setRestoredSession] =
+    useState<ActiveGameSession | null>(null);
   const [board, setBoard] = useState<GeneratedBoard | null>(null);
+  const activeDifficulty = restoredSession?.difficulty ?? difficulty;
+
+  useEffect(() => {
+    const session = loadActiveGame(browserStorage);
+    if (!session) return;
+    setRestoredSession(session);
+    setBoard({
+      cells: session.cells,
+      size: session.size,
+      guaranteedPath: [],
+      guaranteedWord: "",
+    });
+  }, []);
 
   const startGame = () => {
     const config = DIFFICULTY_CONFIGS[difficulty];
     browserStorage.set(DIFFICULTY_STORAGE_KEY, difficulty);
+    setRestoredSession(null);
     setBoard(
       generateBoard({
         size: config.boardSize,
@@ -50,7 +71,7 @@ export function GameSetup() {
   };
 
   if (board) {
-    const config = DIFFICULTY_CONFIGS[difficulty];
+    const config = DIFFICULTY_CONFIGS[activeDifficulty];
     return (
       <div className="w-full">
         <div className="mb-3 flex items-center justify-between gap-3">
@@ -60,7 +81,11 @@ export function GameSetup() {
           </p>
           <button
             className="min-h-10 rounded-lg border border-slate-300 bg-white px-3 text-sm font-semibold dark:border-slate-700 dark:bg-slate-900"
-            onClick={() => setBoard(null)}
+            onClick={() => {
+              discardActiveGame(browserStorage);
+              setRestoredSession(null);
+              setBoard(null);
+            }}
             type="button"
           >
             Change difficulty
@@ -70,6 +95,8 @@ export function GameSetup() {
           cells={board.cells}
           durationSeconds={config.durationSeconds}
           size={config.boardSize}
+          difficulty={activeDifficulty}
+          initialSession={restoredSession ?? undefined}
         />
       </div>
     );
