@@ -4,7 +4,9 @@ import {
   ConflictException,
   Controller,
   Get,
+  Param,
   Post,
+  Query,
   Req,
   Res,
 } from "@nestjs/common";
@@ -31,6 +33,8 @@ const syncSchema = z.object({
 const completedGameSchema = z.object({
   score: z.number().int().nonnegative(),
   words: z.array(z.string().trim().min(1).max(100)).max(500),
+  boardSize: z.number().int().min(2).max(10),
+  durationSeconds: z.number().int().nonnegative().max(3600),
   puzzleId: z.string().trim().min(1).max(40).optional(),
 });
 
@@ -131,5 +135,28 @@ export class AccountController {
   async profile(@Req() request: Request) {
     const user = await this.accounts.requireUser(request);
     return this.accounts.getProfile(user.id);
+  }
+
+  @Get("games")
+  async games(
+    @Req() request: Request,
+    @Query("cursor") cursor?: string,
+    @Query("limit") rawLimit?: string,
+  ) {
+    const user = await this.accounts.requireUser(request);
+    const parsed = z.coerce
+      .number()
+      .int()
+      .min(1)
+      .max(50)
+      .safeParse(rawLimit ?? 10);
+    if (!parsed.success) throw new BadRequestException("Invalid page size.");
+    return this.accounts.getGames(user.id, parsed.data, cursor);
+  }
+
+  @Get("games/:id")
+  async game(@Req() request: Request, @Param("id") id: string) {
+    const user = await this.accounts.requireUser(request);
+    return this.accounts.getGame(user.id, id);
   }
 }

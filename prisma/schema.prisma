@@ -22,17 +22,20 @@ model User {
 }
 
 model CompletedGame {
-  id          String   @id @default(cuid())
-  userId      String
-  score       Int
-  wordsFound  Int
-  longestWord String   @default("")
-  isDaily     Boolean  @default(false)
-  puzzleId    String?
-  completedAt DateTime @default(now())
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id              String   @id @default(cuid())
+  userId          String
+  score           Int
+  wordsFound      Int
+  words           String[]
+  boardSize       Int
+  durationSeconds Int
+  longestWord     String   @default("")
+  isDaily         Boolean  @default(false)
+  puzzleId        String?
+  completedAt     DateTime @default(now())
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@index([userId, completedAt])
+  @@index([userId, completedAt, id])
   @@index([userId, isDaily])
 }
 

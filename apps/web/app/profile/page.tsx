@@ -42,6 +42,22 @@ const profileSchema = z.object({
   ),
 });
 type Profile = z.infer<typeof profileSchema>;
+const gameSummarySchema = z.object({
+  id: z.string(),
+  score: z.number(),
+  wordsFound: z.number(),
+  boardSize: z.number(),
+  durationSeconds: z.number(),
+  longestWord: z.string(),
+  isDaily: z.boolean(),
+  puzzleId: z.string().nullable(),
+  completedAt: z.string(),
+});
+const gamesPageSchema = z.object({
+  items: z.array(gameSummarySchema),
+  nextCursor: z.string().nullable(),
+});
+type GameSummary = z.infer<typeof gameSummarySchema>;
 
 const number = new Intl.NumberFormat();
 const date = new Intl.DateTimeFormat(undefined, { dateStyle: "medium" });
@@ -65,13 +81,38 @@ export default function ProfilePage() {
   const { user, loading } = useAccount();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [failed, setFailed] = useState(false);
+  const [games, setGames] = useState<GameSummary[]>([]);
+  const [nextCursor, setNextCursor] = useState<string | null>(null);
+  const [loadingMore, setLoadingMore] = useState(false);
 
   useEffect(() => {
     if (!user) return;
-    void apiRequest("/account/profile", profileSchema)
-      .then(setProfile)
+    void Promise.all([
+      apiRequest("/account/profile", profileSchema),
+      apiRequest("/account/games?limit=10", gamesPageSchema),
+    ])
+      .then(([loadedProfile, page]) => {
+        setProfile(loadedProfile);
+        setGames(page.items);
+        setNextCursor(page.nextCursor);
+      })
       .catch(() => setFailed(true));
   }, [user]);
+
+  const loadMore = async () => {
+    if (!nextCursor || loadingMore) return;
+    setLoadingMore(true);
+    try {
+      const page = await apiRequest(
+        `/account/games?limit=10&cursor=${encodeURIComponent(nextCursor)}`,
+        gamesPageSchema,
+      );
+      setGames((current) => [...current, ...page.items]);
+      setNextCursor(page.nextCursor);
+    } finally {
+      setLoadingMore(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -187,44 +228,59 @@ export default function ProfilePage() {
           </h2>
           <span className="text-sm text-slate-500">Newest first</span>
         </div>
-        {profile.recentGames.length === 0 ? (
+        {games.length === 0 ? (
           <p className="mt-4 rounded-xl border border-dashed p-8 text-center text-slate-500">
             Complete a game to start your history.
           </p>
         ) : (
           <ol className="mt-4 space-y-3">
-            {profile.recentGames.map((game) => (
+            {games.map((game) => (
               <li
-                className="grid gap-3 rounded-xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900 sm:grid-cols-[1fr_auto_auto] sm:items-center"
+                className="rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900"
                 key={game.id}
               >
-                <div>
-                  <p className="font-bold">
-                    {game.isDaily
-                      ? `Daily challenge · ${game.puzzleId}`
-                      : "Classic game"}
+                <Link
+                  className="grid gap-3 rounded-xl p-4 transition hover:bg-slate-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-violet-600 dark:hover:bg-slate-800 sm:grid-cols-[1fr_auto_auto] sm:items-center"
+                  href={`/profile/games/${game.id}`}
+                >
+                  <div>
+                    <p className="font-bold">
+                      {game.isDaily
+                        ? `Daily challenge · ${game.puzzleId}`
+                        : "Classic game"}
+                    </p>
+                    <time
+                      className="text-sm text-slate-500"
+                      dateTime={game.completedAt}
+                    >
+                      {dateTime.format(new Date(game.completedAt))}
+                    </time>
+                  </div>
+                  <p>
+                    <strong className="text-xl tabular-nums">
+                      {game.score}
+                    </strong>{" "}
+                    <span className="text-sm text-slate-500">points</span>
                   </p>
-                  <time
-                    className="text-sm text-slate-500"
-                    dateTime={game.completedAt}
-                  >
-                    {dateTime.format(new Date(game.completedAt))}
-                  </time>
-                </div>
-                <p>
-                  <strong className="text-xl tabular-nums">{game.score}</strong>{" "}
-                  <span className="text-sm text-slate-500">points</span>
-                </p>
-                <p className="text-sm">
-                  <strong>{game.wordsFound}</strong> words
-                  {game.longestWord
-                    ? ` · ${game.longestWord.toUpperCase()}`
-                    : ""}
-                </p>
+                  <p className="text-sm">
+                    <strong>{game.wordsFound}</strong> words
+                    {` · ${game.boardSize}×${game.boardSize} · ${Math.floor(game.durationSeconds / 60)}:${String(game.durationSeconds % 60).padStart(2, "0")}`}
+                  </p>
+                </Link>
               </li>
             ))}
           </ol>
         )}
+        {nextCursor ? (
+          <button
+            className="mt-4 rounded-xl border border-slate-300 px-5 py-2.5 font-semibold hover:bg-slate-100 disabled:opacity-60 dark:border-slate-700 dark:hover:bg-slate-800"
+            disabled={loadingMore}
+            onClick={() => void loadMore()}
+            type="button"
+          >
+            {loadingMore ? "Loading…" : "Load more games"}
+          </button>
+        ) : null}
       </section>
     </main>
   );

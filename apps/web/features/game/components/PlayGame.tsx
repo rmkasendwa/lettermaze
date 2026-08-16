@@ -180,12 +180,14 @@ export function PlayGame({
         detail: {
           score: scoreRef.current,
           words: foundWordsRef.current,
+          boardSize: size,
+          durationSeconds: duration,
           puzzleId: dailyChallengeDate,
         },
       }),
     );
     onGameEnd?.({ score: scoreRef.current, wordsFound: wordsFoundRef.current });
-  }, [dailyChallengeDate, onGameEnd]);
+  }, [dailyChallengeDate, duration, onGameEnd, size]);
 
   const replay = () => {
     discardActiveGame(browserStorage);

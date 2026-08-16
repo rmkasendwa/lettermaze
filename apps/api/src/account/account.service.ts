@@ -1,4 +1,8 @@
-import { Injectable, UnauthorizedException } from "@nestjs/common";
+import {
+  Injectable,
+  NotFoundException,
+  UnauthorizedException,
+} from "@nestjs/common";
 import {
   createHash,
   randomBytes,
@@ -148,7 +152,13 @@ export class AccountService {
 
   async recordCompletedGame(
     userId: string,
-    result: { score: number; words: string[]; puzzleId?: string },
+    result: {
+      score: number;
+      words: string[];
+      boardSize: number;
+      durationSeconds: number;
+      puzzleId?: string;
+    },
   ) {
     const longestWord = result.words.reduce(
       (longest, word) => (word.length > longest.length ? word : longest),
@@ -160,6 +170,9 @@ export class AccountService {
           userId,
           score: result.score,
           wordsFound: result.words.length,
+          words: result.words,
+          boardSize: result.boardSize,
+          durationSeconds: result.durationSeconds,
           longestWord,
           isDaily: Boolean(result.puzzleId),
           puzzleId: result.puzzleId,
@@ -202,6 +215,40 @@ export class AccountService {
         },
       });
     }
+  }
+
+  private readonly gameSummarySelect = {
+    id: true,
+    score: true,
+    wordsFound: true,
+    boardSize: true,
+    durationSeconds: true,
+    longestWord: true,
+    isDaily: true,
+    puzzleId: true,
+    completedAt: true,
+  } as const;
+
+  async getGames(userId: string, limit: number, cursor?: string) {
+    const games = await this.prisma.completedGame.findMany({
+      where: { userId },
+      orderBy: [{ completedAt: "desc" }, { id: "desc" }],
+      take: limit + 1,
+      ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
+      select: this.gameSummarySelect,
+    });
+    const hasMore = games.length > limit;
+    const items = hasMore ? games.slice(0, limit) : games;
+    return { items, nextCursor: hasMore ? items.at(-1)?.id ?? null : null };
+  }
+
+  async getGame(userId: string, id: string) {
+    const game = await this.prisma.completedGame.findFirst({
+      where: { id, userId },
+      select: { ...this.gameSummarySelect, words: true },
+    });
+    if (!game) throw new NotFoundException("Game result not found.");
+    return game;
   }
 
   async getProfile(userId: string) {
