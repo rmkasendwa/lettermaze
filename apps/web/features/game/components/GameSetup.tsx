@@ -74,13 +74,13 @@ export function GameSetup() {
     const config = DIFFICULTY_CONFIGS[activeDifficulty];
     return (
       <div className="w-full">
-        <div className="mb-3 flex items-center justify-between gap-3">
-          <p className="text-sm font-semibold text-slate-600 dark:text-slate-300">
+        <div className="mb-2 flex min-h-10 items-center justify-between gap-2">
+          <p className="truncate text-xs font-semibold text-slate-600 dark:text-slate-300 sm:text-sm">
             {config.label} · {config.boardSize}×{config.boardSize} ·{" "}
             {config.durationSeconds / 60} min
           </p>
           <button
-            className="min-h-10 rounded-lg border border-slate-300 bg-white px-3 text-sm font-semibold dark:border-slate-700 dark:bg-slate-900"
+            className="min-h-10 shrink-0 rounded-lg border border-slate-300 bg-white px-3 text-sm font-semibold dark:border-slate-700 dark:bg-slate-900"
             onClick={() => {
               discardActiveGame(browserStorage);
               setRestoredSession(null);
@@ -105,7 +105,7 @@ export function GameSetup() {
   return (
     <section
       aria-labelledby="difficulty-heading"
-      className="w-full rounded-2xl border border-slate-200 bg-white p-6 shadow-xl dark:border-slate-800 dark:bg-slate-900 sm:p-8"
+      className="mx-auto w-full max-w-3xl rounded-2xl border border-slate-200 bg-white p-6 shadow-xl dark:border-slate-800 dark:bg-slate-900 sm:p-8"
     >
       <h2 className="text-2xl font-bold" id="difficulty-heading">
         Choose your difficulty

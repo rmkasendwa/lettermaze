@@ -484,141 +484,196 @@ export function PlayGame({
 
   return (
     <section aria-label="Current game" className="w-full">
-      <div className="mb-4 grid grid-cols-3 gap-3" aria-live="polite">
-        <div className="rounded-xl border border-slate-200 bg-white p-3 text-center shadow-sm dark:border-slate-800 dark:bg-slate-900">
-          <div className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-            Time
-          </div>
-          <div
-            className="mt-1 text-3xl font-bold tabular-nums"
-            data-testid="timer"
-          >
-            {Math.floor(remainingSeconds / 60)}:
-            {String(remainingSeconds % 60).padStart(2, "0")}
-          </div>
-        </div>
-        <div className="rounded-xl border border-slate-200 bg-white p-3 text-center shadow-sm dark:border-slate-800 dark:bg-slate-900">
-          <div className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-            Score
-          </div>
-          <div
-            className="relative mt-1 text-3xl font-bold tabular-nums"
-            data-testid="score"
-          >
-            <span
-              key={scoreUpdate.sequence}
-              className="score-update inline-block"
-            >
-              {score}
-            </span>
-            {scoreUpdate.sequence > 0 && scoreUpdate.points > 0 ? (
-              <span
-                key={`points-${scoreUpdate.sequence}`}
-                aria-hidden="true"
-                className="score-points absolute left-1/2 ml-5 text-sm font-bold text-emerald-600 dark:text-emerald-400"
+      <div className="game-primary mx-auto grid w-fit max-w-full gap-2 lg:grid-cols-[minmax(0,1fr)_13rem] lg:items-start lg:gap-4">
+        <div className="game-board-column flex min-w-0 flex-col gap-2">
+          <div className="grid grid-cols-3 gap-2 lg:hidden" aria-live="polite">
+            <div className="rounded-lg border border-slate-200 bg-white px-2 py-1 text-center shadow-sm dark:border-slate-800 dark:bg-slate-900">
+              <div className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                Time
+              </div>
+              <div
+                className="text-xl font-bold tabular-nums sm:text-2xl"
+                data-testid="timer"
               >
-                +{scoreUpdate.points}
-              </span>
+                {Math.floor(remainingSeconds / 60)}:
+                {String(remainingSeconds % 60).padStart(2, "0")}
+              </div>
+            </div>
+            <div className="rounded-lg border border-slate-200 bg-white px-2 py-1 text-center shadow-sm dark:border-slate-800 dark:bg-slate-900">
+              <div className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                Score
+              </div>
+              <div
+                className="relative text-xl font-bold tabular-nums sm:text-2xl"
+                data-testid="score"
+              >
+                <span
+                  key={scoreUpdate.sequence}
+                  className="score-update inline-block"
+                >
+                  {score}
+                </span>
+                {scoreUpdate.sequence > 0 && scoreUpdate.points > 0 ? (
+                  <span
+                    key={`points-${scoreUpdate.sequence}`}
+                    aria-hidden="true"
+                    className="score-points absolute left-1/2 ml-5 text-sm font-bold text-emerald-600 dark:text-emerald-400"
+                  >
+                    +{scoreUpdate.points}
+                  </span>
+                ) : null}
+              </div>
+            </div>
+            <div className="rounded-lg border border-slate-200 bg-white px-2 py-1 text-center shadow-sm dark:border-slate-800 dark:bg-slate-900">
+              <div className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                Words found
+              </div>
+              <div
+                className="text-xl font-bold tabular-nums sm:text-2xl"
+                data-testid="words-found"
+              >
+                {wordsFound}
+              </div>
+            </div>
+          </div>
+          <div className="flex min-h-10 items-center justify-between gap-2 rounded-lg border border-slate-200 bg-white px-3 dark:border-slate-800 dark:bg-slate-900 lg:hidden">
+            <span className="text-sm font-semibold" role="status">
+              {isPaused ? "Game paused" : "Game in progress"}
+            </span>
+            <button
+              className="min-h-9 rounded-md border border-slate-300 bg-white px-3 text-sm font-semibold dark:border-slate-700 dark:bg-slate-900"
+              onClick={() => {
+                if (!isPaused) setSelectedIndexes([]);
+                setPauseReason(isPaused ? null : "manual");
+              }}
+              type="button"
+            >
+              {isPaused ? "Resume" : "Pause"}
+            </button>
+          </div>
+          <div
+            aria-atomic="true"
+            aria-live="polite"
+            className="flex min-h-10 items-center justify-center rounded-lg border border-slate-200 bg-white px-3 text-center shadow-sm dark:border-slate-800 dark:bg-slate-900 lg:hidden"
+            data-testid="word-preview"
+          >
+            {selectedWord ? (
+              <div>
+                <div className="text-lg font-bold uppercase tracking-[0.16em]">
+                  {selectedWord}
+                </div>
+                <div
+                  className={
+                    isPotentialWord
+                      ? "text-xs font-semibold text-emerald-600 dark:text-emerald-400"
+                      : "text-xs font-semibold text-rose-600 dark:text-rose-400"
+                  }
+                  data-testid="word-preview-validity"
+                >
+                  {isPotentialWord ? "Potential word" : "Not a valid word"}
+                </div>
+              </div>
+            ) : null}
+          </div>
+          <div className="game-board relative aspect-square w-full">
+            {!isPaused ? (
+              <div>
+                <Board
+                  cells={cells}
+                  disabled={isPaused || isGameOver}
+                  size={size}
+                  onSelectionChange={setSelectedIndexes}
+                  onSelectionComplete={submitPath}
+                />
+              </div>
+            ) : null}
+            {isPaused ? (
+              <div
+                aria-labelledby="pause-heading"
+                aria-modal="true"
+                className="absolute inset-0 z-20 flex items-center justify-center rounded-xl border border-slate-300 bg-slate-950 p-6 text-center text-white shadow-lg dark:border-slate-700"
+                data-testid="pause-overlay"
+                role="dialog"
+              >
+                <div>
+                  <p className="text-sm font-semibold uppercase tracking-[0.2em] text-sky-300">
+                    Board hidden
+                  </p>
+                  <h2 className="mt-2 text-3xl font-bold" id="pause-heading">
+                    Game paused
+                  </h2>
+                  <p className="mt-3 text-sm text-slate-300">
+                    {pauseReason === "hidden"
+                      ? "The game paused because this tab was hidden."
+                      : "You paused the game."}
+                  </p>
+                  {pauseReason === "manual" ? (
+                    <button
+                      className="mt-6 min-h-12 rounded-xl bg-sky-600 px-6 font-bold text-white transition-colors hover:bg-sky-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-400"
+                      onClick={() => setPauseReason(null)}
+                      type="button"
+                    >
+                      Resume game
+                    </button>
+                  ) : null}
+                </div>
+              </div>
             ) : null}
           </div>
         </div>
-        <div className="rounded-xl border border-slate-200 bg-white p-3 text-center shadow-sm dark:border-slate-800 dark:bg-slate-900">
-          <div className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-            Words found
-          </div>
-          <div
-            className="mt-1 text-3xl font-bold tabular-nums"
-            data-testid="words-found"
-          >
-            {wordsFound}
-          </div>
-        </div>
-      </div>
-      <div className="mb-3 flex items-center justify-between">
-        <span className="font-semibold" role="status">
-          {isPaused ? "Game paused" : "Game in progress"}
-        </span>
-        <button
-          className="min-h-11 rounded-lg border border-slate-300 bg-white px-4 font-semibold dark:border-slate-700 dark:bg-slate-900"
-          onClick={() => {
-            if (!isPaused) setSelectedIndexes([]);
-            setPauseReason(isPaused ? null : "manual");
-          }}
-          type="button"
+        <aside
+          className="hidden space-y-3 lg:block"
+          aria-label="Game status and controls"
         >
-          {isPaused ? "Resume" : "Pause"}
-        </button>
-      </div>
-      <div
-        aria-atomic="true"
-        aria-live="polite"
-        className="mb-3 flex min-h-16 items-center justify-center rounded-xl border border-slate-200 bg-white px-4 text-center shadow-sm dark:border-slate-800 dark:bg-slate-900"
-        data-testid="word-preview"
-      >
-        {selectedWord ? (
-          <div>
-            <div className="text-2xl font-bold uppercase tracking-[0.16em]">
-              {selectedWord}
-            </div>
-            <div
-              className={
-                isPotentialWord
-                  ? "text-xs font-semibold text-emerald-600 dark:text-emerald-400"
-                  : "text-xs font-semibold text-rose-600 dark:text-rose-400"
-              }
-              data-testid="word-preview-validity"
-            >
-              {isPotentialWord ? "Potential word" : "Not a valid word"}
-            </div>
+          <div className="grid gap-2" aria-live="polite">
+            {[
+              [
+                "Time",
+                `${Math.floor(remainingSeconds / 60)}:${String(remainingSeconds % 60).padStart(2, "0")}`,
+              ],
+              ["Score", score],
+              ["Words found", wordsFound],
+            ].map(([label, value]) => (
+              <div
+                className="rounded-xl border border-slate-200 bg-white p-3 text-center shadow-sm dark:border-slate-800 dark:bg-slate-900"
+                key={label}
+              >
+                <div className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                  {label}
+                </div>
+                <div className="mt-1 text-3xl font-bold tabular-nums">
+                  {value}
+                </div>
+              </div>
+            ))}
           </div>
-        ) : null}
-      </div>
-      <div className="relative aspect-square">
-        {!isPaused ? (
-          <div>
-            <Board
-              cells={cells}
-              disabled={isPaused || isGameOver}
-              size={size}
-              onSelectionChange={setSelectedIndexes}
-              onSelectionComplete={submitPath}
-            />
-          </div>
-        ) : null}
-        {isPaused ? (
           <div
-            aria-labelledby="pause-heading"
-            aria-modal="true"
-            className="absolute inset-0 z-20 flex items-center justify-center rounded-xl border border-slate-300 bg-slate-950 p-6 text-center text-white shadow-lg dark:border-slate-700"
-            data-testid="pause-overlay"
-            role="dialog"
+            className="min-h-16 rounded-xl border border-slate-200 bg-white p-3 text-center shadow-sm dark:border-slate-800 dark:bg-slate-900"
+            role="status"
           >
-            <div>
-              <p className="text-sm font-semibold uppercase tracking-[0.2em] text-sky-300">
-                Board hidden
-              </p>
-              <h2 className="mt-2 text-3xl font-bold" id="pause-heading">
-                Game paused
-              </h2>
-              <p className="mt-3 text-sm text-slate-300">
-                {pauseReason === "hidden"
-                  ? "The game paused because this tab was hidden."
-                  : "You paused the game."}
-              </p>
-              {pauseReason === "manual" ? (
-                <button
-                  className="mt-6 min-h-12 rounded-xl bg-sky-600 px-6 font-bold text-white transition-colors hover:bg-sky-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-400"
-                  onClick={() => setPauseReason(null)}
-                  type="button"
-                >
-                  Resume game
-                </button>
-              ) : null}
-            </div>
+            <p className="text-xs font-semibold text-slate-500 dark:text-slate-400">
+              {isPaused ? "Game paused" : "Current word"}
+            </p>
+            <p className="mt-1 truncate text-xl font-bold uppercase tracking-wider">
+              {selectedWord || "—"}
+            </p>
           </div>
-        ) : null}
+          <button
+            aria-label={
+              isPaused ? "Resume from game sidebar" : "Pause from game sidebar"
+            }
+            className="min-h-11 w-full rounded-lg border border-slate-300 bg-white px-4 font-semibold dark:border-slate-700 dark:bg-slate-900"
+            onClick={() => {
+              if (!isPaused) setSelectedIndexes([]);
+              setPauseReason(isPaused ? null : "manual");
+            }}
+            type="button"
+          >
+            {isPaused ? "Resume" : "Pause"}
+          </button>
+        </aside>
       </div>
-      <div className="mt-4">
+      <div className="mx-auto mt-6 max-w-3xl">
         <AcceptedWordsPanel
           headingId="accepted-words-heading"
           words={foundWords}
