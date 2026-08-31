@@ -4,7 +4,6 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   createWordDictionary,
   DEFAULT_PLAYABLE_WORDS,
-  findWordPath,
   scoreWord,
   type Letter,
   WordSubmissionTracker,
@@ -32,6 +31,7 @@ import { shareResult } from "../share";
 export interface PlayGameProps {
   cells: readonly string[];
   size: number;
+  targetWords?: readonly string[];
   durationSeconds?: number;
   onGameEnd?: (result: { score: number; wordsFound: number }) => void;
   difficulty?: Difficulty;
@@ -102,6 +102,7 @@ function AcceptedWordsPanel({
 
 export function PlayGame({
   cells,
+  targetWords,
   size,
   durationSeconds = 180,
   onGameEnd,
@@ -109,25 +110,13 @@ export function PlayGame({
   initialSession,
   dailyChallengeDate,
 }: PlayGameProps) {
+  const puzzleTargetWords = targetWords ?? DEFAULT_PLAYABLE_WORDS;
   const duration = Math.max(0, Math.floor(durationSeconds));
   const restoredRemainingMs = initialSession
     ? Math.max(0, initialSession.expiresAt - Date.now())
     : duration * 1000;
-  const playableWords = useMemo(() => {
-    if (
-      cells.length !== size * size ||
-      cells.some((cell) => !/^[A-Z]$/.test(cell))
-    ) {
-      return [];
-    }
-
-    const letterCells = cells as readonly Letter[];
-    return DEFAULT_PLAYABLE_WORDS.filter((word) =>
-      findWordPath({ cells: letterCells, size }, word),
-    );
-  }, [cells, size]);
   const submissions = useRef(
-    new WordSubmissionTracker(createWordDictionary(DEFAULT_PLAYABLE_WORDS)),
+    new WordSubmissionTracker(createWordDictionary(puzzleTargetWords)),
   );
   const submissionsInitialized = useRef(false);
   if (!submissionsInitialized.current) {
@@ -269,11 +258,12 @@ export function PlayGame({
       difficulty,
       cells: [...cells] as Letter[],
       size,
+      targetWords: [...puzzleTargetWords],
       foundWords: [...foundWordsRef.current],
       score: scoreRef.current,
       expiresAt,
     });
-  }, [cells, difficulty, isGameOver, isPaused, size]);
+  }, [cells, difficulty, isGameOver, isPaused, size, puzzleTargetWords]);
 
   useEffect(() => {
     persistGame();
@@ -312,6 +302,7 @@ export function PlayGame({
     setFoundWords((words) => [...words, acceptedWord]);
     setScoreUpdate((update) => ({ points, sequence: update.sequence + 1 }));
     queueMicrotask(persistGame);
+    if (wordsFoundRef.current === puzzleTargetWords.length) queueMicrotask(endGame);
     return true;
   };
 
@@ -320,14 +311,14 @@ export function PlayGame({
     .join("");
   const isPotentialWord =
     selectedWord.length > 0 &&
-    DEFAULT_PLAYABLE_WORDS.some((word) => word.startsWith(selectedWord));
+    puzzleTargetWords.some((word) => word.startsWith(selectedWord));
 
   if (isGameOver) {
     const longestWord = foundWords.reduce(
       (longest, word) => (word.length > longest.length ? word : longest),
       "",
     );
-    const missedWords = playableWords.filter(
+    const missedWords = puzzleTargetWords.filter(
       (word) => !foundWords.includes(word),
     );
 
@@ -674,6 +665,12 @@ export function PlayGame({
         </aside>
       </div>
       <div className="mx-auto mt-6 max-w-3xl">
+        {targetWords ? <section className="mb-3 rounded-xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900" aria-labelledby="target-words-heading">
+          <h3 className="font-bold" id="target-words-heading">Target words</h3>
+          <ul className="mt-3 flex flex-wrap gap-2" aria-label="Target words">
+            {puzzleTargetWords.map((word) => <li className={foundWords.includes(word) ? "rounded-full bg-emerald-100 px-3 py-1 text-sm font-semibold line-through dark:bg-emerald-950" : "rounded-full bg-sky-100 px-3 py-1 text-sm font-semibold dark:bg-sky-950"} key={word}>{word}</li>)}
+          </ul>
+        </section> : null}
         <AcceptedWordsPanel
           headingId="accepted-words-heading"
           words={foundWords}

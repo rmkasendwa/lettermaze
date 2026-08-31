@@ -55,6 +55,8 @@ export function GameSetup() {
       size: session.size,
       guaranteedPath: [],
       guaranteedWord: "",
+      targetWords: session.targetWords ?? [],
+      targetPaths: [],
     });
   }, []);
 
@@ -93,6 +95,7 @@ export function GameSetup() {
         </div>
         <PlayGame
           cells={board.cells}
+          targetWords={board.targetWords?.length > 0 ? board.targetWords : undefined}
           durationSeconds={config.durationSeconds}
           size={config.boardSize}
           difficulty={activeDifficulty}

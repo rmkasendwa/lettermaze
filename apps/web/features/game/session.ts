@@ -17,6 +17,7 @@ export interface ActiveGameSession {
   difficulty: Difficulty;
   cells: Letter[];
   size: number;
+  targetWords?: string[];
   foundWords: string[];
   score: number;
   expiresAt: number;
@@ -54,6 +55,7 @@ function isValidSession(value: unknown): value is ActiveGameSession {
     !Number.isInteger(session.size) ||
     !Array.isArray(session.cells) ||
     !Array.isArray(session.foundWords) ||
+    (session.targetWords !== undefined && !Array.isArray(session.targetWords)) ||
     typeof session.score !== "number" ||
     !Number.isFinite(session.score) ||
     typeof session.expiresAt !== "number" ||
@@ -69,11 +71,13 @@ function isValidSession(value: unknown): value is ActiveGameSession {
   ) return false;
 
   const board = { cells: session.cells as Letter[], size: session.size };
-  if (session.foundWords.some((word) =>
+  const targetWords = session.targetWords ?? DEFAULT_PLAYABLE_WORDS.filter((word) => findWordPath(board, word));
+  if (targetWords.length === 0 || new Set(targetWords).size !== targetWords.length || targetWords.some((word) =>
     typeof word !== "string" ||
     !(DEFAULT_PLAYABLE_WORDS as readonly string[]).includes(word) ||
     !findWordPath(board, word)
   )) return false;
+  if (session.foundWords.some((word) => !targetWords.includes(word))) return false;
 
   return session.score === session.foundWords.reduce(
     (total, word) => total + scoreWord(word),

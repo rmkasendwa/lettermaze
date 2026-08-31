@@ -13,6 +13,10 @@ export interface GeneratedBoard {
   /** A guaranteed playable word and its adjacent, non-repeating path. */
   readonly guaranteedWord: string;
   readonly guaranteedPath: readonly Coordinate[];
+  /** The complete, unique set of words players must find. */
+  readonly targetWords: readonly string[];
+  /** A legal, non-repeating path for each corresponding target word. */
+  readonly targetPaths: readonly (readonly Coordinate[])[];
 }
 
 export interface GenerateBoardOptions {
@@ -21,6 +25,7 @@ export interface GenerateBoardOptions {
   words?: readonly string[];
   weights?: LetterWeights;
   random?: RandomSource;
+  targetWordCount?: number;
 }
 
 export interface LetterBoard {
@@ -152,9 +157,9 @@ function createSnakePath(size: number, random: RandomSource): Coordinate[] {
 }
 
 function normalizeWords(words: readonly string[], capacity: number): string[] {
-  return words
+  return [...new Set(words
     .map((word) => word.trim().toUpperCase())
-    .filter((word) => /^[A-Z]+$/.test(word) && word.length <= capacity);
+    .filter((word) => /^[A-Z]+$/.test(word) && word.length <= capacity))];
 }
 
 export function generateBoard(options: GenerateBoardOptions): GeneratedBoard {
@@ -179,18 +184,43 @@ export function generateBoard(options: GenerateBoardOptions): GeneratedBoard {
     throw new RangeError("At least one playable word must fit on the board.");
   }
 
-  const guaranteedWord = words[randomIndex(words.length, random)]!;
   const fullPath = createSnakePath(size, random);
-  const maxStart = fullPath.length - guaranteedWord.length;
-  const start = maxStart === 0 ? 0 : randomIndex(maxStart + 1, random);
-  const guaranteedPath = fullPath.slice(start, start + guaranteedWord.length);
+  const requestedCount = options.targetWordCount ?? Math.max(3, size);
+  if (!Number.isInteger(requestedCount) || requestedCount < 1) {
+    throw new RangeError("Target word count must be a positive integer.");
+  }
+  const candidates = [...words];
+  for (let index = candidates.length - 1; index > 0; index -= 1) {
+    const swapIndex = randomIndex(index + 1, random);
+    [candidates[index], candidates[swapIndex]] = [candidates[swapIndex]!, candidates[index]!];
+  }
+  const targetWords: string[] = [];
+  let usedCells = 0;
+  for (const word of candidates) {
+    if (targetWords.length === requestedCount) break;
+    if (usedCells + word.length <= fullPath.length) {
+      targetWords.push(word);
+      usedCells += word.length;
+    }
+  }
+  if (targetWords.length === 0) {
+    throw new RangeError("At least one target word must fit on the board.");
+  }
+  const targetPaths: Coordinate[][] = [];
+  let pathOffset = 0;
+  for (const word of targetWords) {
+    targetPaths.push(fullPath.slice(pathOffset, pathOffset + word.length));
+    pathOffset += word.length;
+  }
+  const guaranteedWord = targetWords[0]!;
+  const guaranteedPath = targetPaths[0]!;
   const cells = Array.from({ length: size * size }, () =>
     pickWeightedLetter(random, weights),
   );
 
-  guaranteedPath.forEach(({ row, column }, index) => {
-    cells[row * size + column] = guaranteedWord[index] as Letter;
-  });
+  targetPaths.forEach((path, wordIndex) => path.forEach(({ row, column }, letterIndex) => {
+    cells[row * size + column] = targetWords[wordIndex]![letterIndex] as Letter;
+  }));
 
-  return { size, cells, guaranteedWord, guaranteedPath };
+  return { size, cells, guaranteedWord, guaranteedPath, targetWords, targetPaths };
 }

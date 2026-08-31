@@ -164,6 +164,7 @@ export function DailyChallenge({ puzzleId }: { puzzleId: string }) {
       <div className="w-full max-w-[min(42rem,calc(100dvh-8rem))]">
         <PlayGame
           cells={board.cells}
+          targetWords={board.targetWords}
           dailyChallengeDate={puzzleId}
           size={board.size}
           onGameEnd={finish}
