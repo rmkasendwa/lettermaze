@@ -100,6 +100,55 @@ function AcceptedWordsPanel({
   );
 }
 
+function TargetWordsPanel({
+  foundWords,
+  headingId,
+  words,
+}: {
+  foundWords: readonly string[];
+  headingId: string;
+  words: readonly string[];
+}) {
+  const remainingCount = words.length - foundWords.length;
+
+  return (
+    <section
+      aria-labelledby={headingId}
+      className="rounded-xl border border-slate-200 bg-white p-3 shadow-sm dark:border-slate-800 dark:bg-slate-900"
+    >
+      <div className="flex items-baseline justify-between gap-3">
+        <h2 className="text-sm font-bold" id={headingId}>
+          Find these words
+        </h2>
+        <span
+          className="shrink-0 text-xs font-bold tabular-nums text-sky-700 dark:text-sky-300"
+          data-testid="words-remaining"
+        >
+          {remainingCount} remaining
+        </span>
+      </div>
+      <ul aria-label="Target words" className="mt-2 flex flex-wrap gap-1.5">
+        {words.map((word) => {
+          const isFound = foundWords.includes(word);
+          return (
+            <li
+              aria-label={`${word}, ${isFound ? "found" : "not found"}`}
+              className={
+                isFound
+                  ? "rounded-md bg-emerald-100 px-2 py-1 text-sm font-bold uppercase text-emerald-800 line-through decoration-2 dark:bg-emerald-950 dark:text-emerald-200"
+                  : "rounded-md bg-sky-100 px-2 py-1 text-sm font-bold uppercase text-sky-900 dark:bg-sky-950 dark:text-sky-100"
+              }
+              key={word}
+            >
+              {word}
+            </li>
+          );
+        })}
+      </ul>
+    </section>
+  );
+}
+
 export function PlayGame({
   cells,
   targetWords,
@@ -302,7 +351,8 @@ export function PlayGame({
     setFoundWords((words) => [...words, acceptedWord]);
     setScoreUpdate((update) => ({ points, sequence: update.sequence + 1 }));
     queueMicrotask(persistGame);
-    if (wordsFoundRef.current === puzzleTargetWords.length) queueMicrotask(endGame);
+    if (wordsFoundRef.current === puzzleTargetWords.length)
+      queueMicrotask(endGame);
     return true;
   };
 
@@ -566,6 +616,13 @@ export function PlayGame({
               </div>
             ) : null}
           </div>
+          <div className="lg:hidden">
+            <TargetWordsPanel
+              foundWords={foundWords}
+              headingId="mobile-target-words-heading"
+              words={puzzleTargetWords}
+            />
+          </div>
           <div className="game-board relative aspect-square w-full">
             {!isPaused ? (
               <div>
@@ -616,6 +673,11 @@ export function PlayGame({
           className="hidden space-y-3 lg:block"
           aria-label="Game status and controls"
         >
+          <TargetWordsPanel
+            foundWords={foundWords}
+            headingId="desktop-target-words-heading"
+            words={puzzleTargetWords}
+          />
           <div className="grid gap-2" aria-live="polite">
             {[
               [
@@ -665,12 +727,6 @@ export function PlayGame({
         </aside>
       </div>
       <div className="mx-auto mt-6 max-w-3xl">
-        {targetWords ? <section className="mb-3 rounded-xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900" aria-labelledby="target-words-heading">
-          <h3 className="font-bold" id="target-words-heading">Target words</h3>
-          <ul className="mt-3 flex flex-wrap gap-2" aria-label="Target words">
-            {puzzleTargetWords.map((word) => <li className={foundWords.includes(word) ? "rounded-full bg-emerald-100 px-3 py-1 text-sm font-semibold line-through dark:bg-emerald-950" : "rounded-full bg-sky-100 px-3 py-1 text-sm font-semibold dark:bg-sky-950"} key={word}>{word}</li>)}
-          </ul>
-        </section> : null}
         <AcceptedWordsPanel
           headingId="accepted-words-heading"
           words={foundWords}

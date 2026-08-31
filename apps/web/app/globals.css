@@ -18,13 +18,13 @@ body {
 
 .game-board-column,
 .game-board {
-  width: min(calc(100vw - 1.5rem), calc(100dvh - 17rem), 36rem);
+  width: min(calc(100vw - 1.5rem), calc(100dvh - 23rem), 36rem);
 }
 
 @media (min-width: 640px) {
   .game-board-column,
   .game-board {
-    width: min(calc(100vw - 3rem), calc(100dvh - 15rem), 36rem);
+    width: min(calc(100vw - 3rem), calc(100dvh - 21rem), 36rem);
   }
 }
 

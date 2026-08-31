@@ -101,6 +101,22 @@ function selectTreeRow() {
 }
 
 describe("PlayGame", () => {
+  it("shows every target and the number still remaining when play begins", () => {
+    render(
+      <PlayGame cells={cells} size={5} targetWords={["LETTER", "TREE"]} />,
+    );
+
+    const targetLists = screen.getAllByRole("list", { name: "Target words" });
+    expect(targetLists).toHaveLength(2);
+    for (const list of targetLists) {
+      expect(list).toHaveTextContent("LETTER");
+      expect(list).toHaveTextContent("TREE");
+    }
+    expect(screen.getAllByTestId("words-remaining")[0]).toHaveTextContent(
+      "2 remaining",
+    );
+  });
+
   it("previews the selected word and clears it when selection ends", () => {
     render(<PlayGame cells={cells} size={5} />);
     const board = screen.getByRole("grid");
@@ -163,6 +179,9 @@ describe("PlayGame", () => {
     expect(screen.getByText("No words accepted yet.")).toBeInTheDocument();
 
     selectTreeRow();
+    expect(screen.getAllByTestId("words-remaining")[0]).toHaveTextContent(
+      "12 remaining",
+    );
     selectLetterRow();
     expect(screen.getByTestId("word-preview")).toBeEmptyDOMElement();
     expect(screen.getByTestId("score")).toHaveTextContent("4");
@@ -178,12 +197,12 @@ describe("PlayGame", () => {
     expect(
       [...acceptedWords.querySelectorAll("li")].map((item) => item.textContent),
     ).toEqual(["LETTER+3 points", "TREE+1 point"]);
-    expect(screen.getAllByText("LETTER")).toHaveLength(1);
+    expect(screen.getAllByText("LETTER")).toHaveLength(3);
 
     selectLetterRow();
     expect(screen.getByTestId("score")).toHaveTextContent("4");
     expect(screen.getByTestId("words-found")).toHaveTextContent("2");
-    expect(screen.getAllByText("LETTER")).toHaveLength(1);
+    expect(screen.getAllByText("LETTER")).toHaveLength(3);
   });
 
   it("counts down, pauses, and ends with the final score", () => {
