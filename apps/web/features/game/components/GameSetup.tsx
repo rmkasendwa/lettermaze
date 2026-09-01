@@ -76,13 +76,10 @@ export function GameSetup() {
     const config = DIFFICULTY_CONFIGS[activeDifficulty];
     return (
       <div className="w-full">
-        <div className="mb-2 flex min-h-10 items-center justify-between gap-2">
-          <p className="truncate text-xs font-semibold text-slate-600 dark:text-slate-300 sm:text-sm">
-            {config.label} · {config.boardSize}×{config.boardSize} ·{" "}
-            {config.durationSeconds / 60} min
-          </p>
+        <div className="game-context mx-auto mb-2 flex max-w-xl items-center justify-end">
           <button
-            className="min-h-10 shrink-0 rounded-lg border border-slate-300 bg-white px-3 text-sm font-semibold dark:border-slate-700 dark:bg-slate-900"
+            aria-label={`Change difficulty. Current difficulty: ${config.label}`}
+            className="min-h-9 rounded-lg px-3 text-xs font-semibold text-slate-500 transition-colors hover:bg-slate-200 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-white"
             onClick={() => {
               discardActiveGame(browserStorage);
               setRestoredSession(null);
@@ -90,12 +87,14 @@ export function GameSetup() {
             }}
             type="button"
           >
-            Change difficulty
+            {config.label} · Change
           </button>
         </div>
         <PlayGame
           cells={board.cells}
-          targetWords={board.targetWords?.length > 0 ? board.targetWords : undefined}
+          targetWords={
+            board.targetWords?.length > 0 ? board.targetWords : undefined
+          }
           durationSeconds={config.durationSeconds}
           size={config.boardSize}
           difficulty={activeDifficulty}

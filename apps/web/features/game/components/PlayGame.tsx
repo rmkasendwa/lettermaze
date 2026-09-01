@@ -527,27 +527,31 @@ export function PlayGame({
 
   return (
     <section aria-label="Current game" className="w-full">
-      <div className="game-primary mx-auto grid w-fit max-w-full gap-2 lg:grid-cols-[minmax(0,1fr)_13rem] lg:items-start lg:gap-4">
+      <div className="game-primary mx-auto w-fit max-w-full">
         <div className="game-board-column flex min-w-0 flex-col gap-2">
-          <div className="grid grid-cols-3 gap-2 lg:hidden" aria-live="polite">
-            <div className="rounded-lg border border-slate-200 bg-white px-2 py-1 text-center shadow-sm dark:border-slate-800 dark:bg-slate-900">
+          <div
+            className="grid grid-cols-[1fr_1fr_1fr_auto] items-stretch overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900"
+            aria-label="Game status and controls"
+            aria-live="polite"
+          >
+            <div className="px-2 py-1.5 text-center sm:py-2">
               <div className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                 Time
               </div>
               <div
-                className="text-xl font-bold tabular-nums sm:text-2xl"
+                className="text-lg font-bold tabular-nums sm:text-xl"
                 data-testid="timer"
               >
                 {Math.floor(remainingSeconds / 60)}:
                 {String(remainingSeconds % 60).padStart(2, "0")}
               </div>
             </div>
-            <div className="rounded-lg border border-slate-200 bg-white px-2 py-1 text-center shadow-sm dark:border-slate-800 dark:bg-slate-900">
+            <div className="border-l border-slate-200 px-2 py-1.5 text-center dark:border-slate-800 sm:py-2">
               <div className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                 Score
               </div>
               <div
-                className="relative text-xl font-bold tabular-nums sm:text-2xl"
+                className="relative text-lg font-bold tabular-nums sm:text-xl"
                 data-testid="score"
               >
                 <span
@@ -567,24 +571,20 @@ export function PlayGame({
                 ) : null}
               </div>
             </div>
-            <div className="rounded-lg border border-slate-200 bg-white px-2 py-1 text-center shadow-sm dark:border-slate-800 dark:bg-slate-900">
+            <div className="border-l border-slate-200 px-2 py-1.5 text-center dark:border-slate-800 sm:py-2">
               <div className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                 Words found
               </div>
               <div
-                className="text-xl font-bold tabular-nums sm:text-2xl"
+                className="text-lg font-bold tabular-nums sm:text-xl"
                 data-testid="words-found"
               >
                 {wordsFound}
               </div>
             </div>
-          </div>
-          <div className="flex min-h-10 items-center justify-between gap-2 rounded-lg border border-slate-200 bg-white px-3 dark:border-slate-800 dark:bg-slate-900 lg:hidden">
-            <span className="text-sm font-semibold" role="status">
-              {isPaused ? "Game paused" : "Game in progress"}
-            </span>
             <button
-              className="min-h-9 rounded-md border border-slate-300 bg-white px-3 text-sm font-semibold dark:border-slate-700 dark:bg-slate-900"
+              aria-label={isPaused ? "Resume" : "Pause"}
+              className="min-w-16 border-l border-slate-200 px-3 text-sm font-semibold text-slate-600 transition-colors hover:bg-slate-100 dark:border-slate-800 dark:text-slate-300 dark:hover:bg-slate-800"
               onClick={() => {
                 if (!isPaused) setSelectedIndexes([]);
                 setPauseReason(isPaused ? null : "manual");
@@ -597,12 +597,12 @@ export function PlayGame({
           <div
             aria-atomic="true"
             aria-live="polite"
-            className="flex min-h-10 items-center justify-center rounded-lg border border-slate-200 bg-white px-3 text-center shadow-sm dark:border-slate-800 dark:bg-slate-900 lg:hidden"
+            className="flex min-h-8 items-center justify-center px-3 text-center"
             data-testid="word-preview"
           >
             {selectedWord ? (
               <div>
-                <div className="text-lg font-bold uppercase tracking-[0.16em]">
+                <div className="text-base font-bold uppercase tracking-[0.16em]">
                   {selectedWord}
                 </div>
                 <div
@@ -617,13 +617,6 @@ export function PlayGame({
                 </div>
               </div>
             ) : null}
-          </div>
-          <div className="lg:hidden">
-            <TargetWordsPanel
-              foundWords={foundWords}
-              headingId="mobile-target-words-heading"
-              words={puzzleTargetWords}
-            />
           </div>
           <div className="game-board relative aspect-square w-full">
             {!isPaused ? (
@@ -671,64 +664,13 @@ export function PlayGame({
             ) : null}
           </div>
         </div>
-        <aside
-          className="hidden space-y-3 lg:block"
-          aria-label="Game status and controls"
-        >
-          <TargetWordsPanel
-            foundWords={foundWords}
-            headingId="desktop-target-words-heading"
-            words={puzzleTargetWords}
-          />
-          <div className="grid gap-2" aria-live="polite">
-            {[
-              [
-                "Time",
-                `${Math.floor(remainingSeconds / 60)}:${String(remainingSeconds % 60).padStart(2, "0")}`,
-              ],
-              ["Score", score],
-              ["Words found", wordsFound],
-            ].map(([label, value]) => (
-              <div
-                className="rounded-xl border border-slate-200 bg-white p-3 text-center shadow-sm dark:border-slate-800 dark:bg-slate-900"
-                key={label}
-              >
-                <div className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-                  {label}
-                </div>
-                <div className="mt-1 text-3xl font-bold tabular-nums">
-                  {value}
-                </div>
-              </div>
-            ))}
-          </div>
-          <div
-            className="min-h-16 rounded-xl border border-slate-200 bg-white p-3 text-center shadow-sm dark:border-slate-800 dark:bg-slate-900"
-            role="status"
-          >
-            <p className="text-xs font-semibold text-slate-500 dark:text-slate-400">
-              {isPaused ? "Game paused" : "Current word"}
-            </p>
-            <p className="mt-1 truncate text-xl font-bold uppercase tracking-wider">
-              {selectedWord || "—"}
-            </p>
-          </div>
-          <button
-            aria-label={
-              isPaused ? "Resume from game sidebar" : "Pause from game sidebar"
-            }
-            className="min-h-11 w-full rounded-lg border border-slate-300 bg-white px-4 font-semibold dark:border-slate-700 dark:bg-slate-900"
-            onClick={() => {
-              if (!isPaused) setSelectedIndexes([]);
-              setPauseReason(isPaused ? null : "manual");
-            }}
-            type="button"
-          >
-            {isPaused ? "Resume" : "Pause"}
-          </button>
-        </aside>
       </div>
-      <div className="mx-auto mt-6 max-w-3xl">
+      <div className="game-secondary mx-auto mt-10 grid max-w-3xl gap-4 sm:grid-cols-2">
+        <TargetWordsPanel
+          foundWords={foundWords}
+          headingId="target-words-heading"
+          words={puzzleTargetWords}
+        />
         <AcceptedWordsPanel
           headingId="accepted-words-heading"
           words={foundWords}

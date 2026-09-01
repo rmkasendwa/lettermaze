@@ -16,22 +16,38 @@ body {
   padding-block: 0;
 }
 
+body:has(.play-page) header {
+  border-bottom-color: transparent;
+  background: transparent;
+}
+
+body:has(.play-page) header > div {
+  min-height: 2.75rem;
+  padding-block: 0.25rem;
+}
+
+body:has(.play-page) header nav,
+body:has(.play-page) header nav + div,
+body:has(.play-page) footer {
+  display: none;
+}
+
 .game-board-column,
 .game-board {
-  width: min(calc(100vw - 1.5rem), calc(100dvh - 23rem), 36rem);
+  width: min(calc(100vw - 1.5rem), calc(100dvh - 9rem), 38rem);
 }
 
 @media (min-width: 640px) {
   .game-board-column,
   .game-board {
-    width: min(calc(100vw - 3rem), calc(100dvh - 21rem), 36rem);
+    width: min(calc(100vw - 3rem), calc(100dvh - 9rem), 38rem);
   }
 }
 
 @media (min-width: 1024px) {
   .game-board-column,
   .game-board {
-    width: min(calc(100vw - 19rem), calc(100dvh - 8rem), 36rem);
+    width: min(calc(100vw - 3rem), calc(100dvh - 9rem), 38rem);
   }
 }
 

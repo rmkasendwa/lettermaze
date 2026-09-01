@@ -107,7 +107,7 @@ describe("PlayGame", () => {
     );
 
     const targetLists = screen.getAllByRole("list", { name: "Target words" });
-    expect(targetLists).toHaveLength(2);
+    expect(targetLists).toHaveLength(1);
     for (const list of targetLists) {
       expect(list).toHaveTextContent("LETTER");
       expect(list).toHaveTextContent("TREE");
@@ -182,16 +182,15 @@ describe("PlayGame", () => {
     expect(screen.getAllByTestId("words-remaining")[0]).toHaveTextContent(
       "12 remaining",
     );
-    for (const list of screen.getAllByRole("list", { name: "Target words" })) {
-      const foundTree = within(list).getByRole("listitem", {
-        name: "TREE, found",
-      });
-      expect(foundTree).toHaveClass("line-through");
-      expect(foundTree).toHaveTextContent("TREE");
-      expect(
-        within(list).getByRole("listitem", { name: "LETTER, not found" }),
-      ).not.toHaveClass("line-through");
-    }
+    const targetList = screen.getByRole("list", { name: "Target words" });
+    const foundTree = within(targetList).getByRole("listitem", {
+      name: "TREE, found",
+    });
+    expect(foundTree).toHaveClass("line-through");
+    expect(foundTree).toHaveTextContent("TREE");
+    expect(
+      within(targetList).getByRole("listitem", { name: "LETTER, not found" }),
+    ).not.toHaveClass("line-through");
     selectLetterRow();
     expect(screen.getByTestId("word-preview")).toBeEmptyDOMElement();
     expect(screen.getByTestId("score")).toHaveTextContent("4");
@@ -207,7 +206,7 @@ describe("PlayGame", () => {
     expect(
       [...acceptedWords.querySelectorAll("li")].map((item) => item.textContent),
     ).toEqual(["LETTER+3 points", "TREE+1 point"]);
-    expect(screen.getAllByText("LETTER")).toHaveLength(3);
+    expect(screen.getAllByText("LETTER")).toHaveLength(2);
 
     selectLetterRow();
     expect(screen.getByTestId("score")).toHaveTextContent("4");
@@ -215,7 +214,7 @@ describe("PlayGame", () => {
     expect(screen.getAllByTestId("words-remaining")[0]).toHaveTextContent(
       "11 remaining",
     );
-    expect(screen.getAllByText("LETTER")).toHaveLength(3);
+    expect(screen.getAllByText("LETTER")).toHaveLength(2);
   });
 
   it("counts down, pauses, and ends with the final score", () => {
