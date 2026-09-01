@@ -4,7 +4,8 @@ import { useEffect, useState, useSyncExternalStore } from "react";
 import {
   DIFFICULTY_CONFIGS,
   DIFFICULTY_LEVELS,
-  generateBoard,
+  generateConfiguredBoard,
+  createNormalGameConfiguration,
   isDifficulty,
   type Difficulty,
   type GeneratedBoard,
@@ -61,15 +62,10 @@ export function GameSetup() {
   }, []);
 
   const startGame = () => {
-    const config = DIFFICULTY_CONFIGS[difficulty];
+    const config = createNormalGameConfiguration(difficulty);
     browserStorage.set(DIFFICULTY_STORAGE_KEY, difficulty);
     setRestoredSession(null);
-    setBoard(
-      generateBoard({
-        size: config.boardSize,
-        weights: config.letterWeights,
-      }),
-    );
+    setBoard(generateConfiguredBoard(config));
   };
 
   if (board) {
@@ -95,8 +91,10 @@ export function GameSetup() {
           targetWords={
             board.targetWords?.length > 0 ? board.targetWords : undefined
           }
-          durationSeconds={config.durationSeconds}
-          size={config.boardSize}
+          config={
+            restoredSession?.config ??
+            createNormalGameConfiguration(activeDifficulty)
+          }
           difficulty={activeDifficulty}
           initialSession={restoredSession ?? undefined}
         />

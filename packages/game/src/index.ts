@@ -20,7 +20,8 @@ export {
   getNextUtcPuzzleAt,
   getUtcPuzzleId,
 } from "./daily";
-export { scoreWord } from "./scoring";
+export { scoreWord, STANDARD_SCORING, type ScoringRules } from "./scoring";
+export * from "./configuration";
 export {
   DIFFICULTY_CONFIGS,
   DIFFICULTY_LEVELS,

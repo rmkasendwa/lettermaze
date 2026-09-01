@@ -3,7 +3,9 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { leaderboardSchema, type Leaderboard } from "@lettermaze/contracts";
 import {
-  generateDailyBoard,
+  generateConfiguredBoard,
+  createDailyGameConfiguration,
+  createPracticeGameConfiguration,
   getNextUtcPuzzleAt,
   getUtcPuzzleId,
 } from "@lettermaze/game";
@@ -26,9 +28,23 @@ function formatCountdown(milliseconds: number): string {
 
 export function DailyChallenge({ puzzleId }: { puzzleId: string }) {
   const { user } = useAccount();
-  const board = useMemo(() => generateDailyBoard(puzzleId), [puzzleId]);
+  const dailyConfig = useMemo(
+    () => createDailyGameConfiguration(puzzleId),
+    [puzzleId],
+  );
+  const board = useMemo(
+    () => generateConfiguredBoard(dailyConfig),
+    [dailyConfig],
+  );
   const attemptKey = `daily-attempt:${puzzleId}`;
   const [rankedAttemptUsed, setRankedAttemptUsed] = useState(false);
+  const config = useMemo(
+    () =>
+      rankedAttemptUsed
+        ? createPracticeGameConfiguration(dailyConfig)
+        : dailyConfig,
+    [rankedAttemptUsed, dailyConfig],
+  );
   const [submissionStatus, setSubmissionStatus] = useState("");
   const [leaderboard, setLeaderboard] = useState<Leaderboard | null>(null);
   const [streak, setStreak] = useState({ current: 0, longest: 0 });
@@ -91,7 +107,7 @@ export function DailyChallenge({ puzzleId }: { puzzleId: string }) {
   const finish = useCallback(
     async (result: { score: number; wordsFound: number }) => {
       setStreak(getDailyStreak(browserStorage));
-      if (browserStorage.get(attemptKey) === true) {
+      if (!config.ranked || browserStorage.get(attemptKey) === true) {
         setSubmissionStatus("Replay complete — rankings are unchanged.");
         return;
       }
@@ -117,7 +133,7 @@ export function DailyChallenge({ puzzleId }: { puzzleId: string }) {
         );
       }
     },
-    [attemptKey, loadLeaderboard, puzzleId],
+    [attemptKey, loadLeaderboard, puzzleId, config.ranked],
   );
 
   return (
@@ -166,7 +182,7 @@ export function DailyChallenge({ puzzleId }: { puzzleId: string }) {
           cells={board.cells}
           targetWords={board.targetWords}
           dailyChallengeDate={puzzleId}
-          size={board.size}
+          config={config}
           onGameEnd={finish}
         />
       </div>

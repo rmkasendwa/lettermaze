@@ -1,6 +1,11 @@
-import { generateBoard, type GeneratedBoard } from "./board";
+import { type GeneratedBoard } from "./board";
+import {
+  createDailyGameConfiguration,
+  createNormalGameConfiguration,
+  generateConfiguredBoard,
+} from "./configuration";
 
-export const DAILY_BOARD_SIZE = 5;
+export const DAILY_BOARD_SIZE = createNormalGameConfiguration().boardSize;
 
 /** Returns the canonical YYYY-MM-DD puzzle id for an instant in UTC. */
 export function getUtcPuzzleId(date: Date = new Date()): string {
@@ -20,8 +25,9 @@ export function generateDailyBoard(
   puzzleId: string,
   size = DAILY_BOARD_SIZE,
 ): GeneratedBoard {
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(puzzleId)) {
-    throw new RangeError("Puzzle id must use YYYY-MM-DD format.");
-  }
-  return generateBoard({ size, seed: `lettermaze:daily:v1:${puzzleId}` });
+  return generateConfiguredBoard({
+    ...createDailyGameConfiguration(puzzleId),
+    boardSize: size,
+    targetWordCount: Math.max(3, size),
+  });
 }

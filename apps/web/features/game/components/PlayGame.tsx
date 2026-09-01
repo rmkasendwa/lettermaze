@@ -3,7 +3,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   createWordDictionary,
-  DEFAULT_PLAYABLE_WORDS,
+  resolveGameConfiguration,
+  type GameConfiguration,
+  type ScoringRules,
   scoreWord,
   type Letter,
   WordSubmissionTracker,
@@ -30,9 +32,8 @@ import { shareResult } from "../share";
 
 export interface PlayGameProps {
   cells: readonly string[];
-  size: number;
+  config: GameConfiguration;
   targetWords?: readonly string[];
-  durationSeconds?: number;
   onGameEnd?: (result: { score: number; wordsFound: number }) => void;
   difficulty?: Difficulty;
   initialSession?: ActiveGameSession;
@@ -43,7 +44,9 @@ function AcceptedWordsPanel({
   heading = "Accepted words",
   headingId,
   words,
+  scoring,
 }: {
+  scoring: ScoringRules;
   heading?: string;
   headingId: string;
   words: readonly string[];
@@ -72,7 +75,7 @@ function AcceptedWordsPanel({
           className="mt-3 grid max-h-40 grid-cols-1 gap-2 overflow-y-auto overscroll-contain pr-1 sm:grid-cols-2"
         >
           {sortedWords.map((word) => {
-            const points = scoreWord(word);
+            const points = scoreWord(word, scoring);
             return (
               <li
                 className="flex min-w-0 items-center justify-between gap-3 rounded-lg bg-emerald-50 px-3 py-2 text-sm dark:bg-emerald-950/60"
@@ -154,15 +157,16 @@ function TargetWordsPanel({
 export function PlayGame({
   cells,
   targetWords,
-  size,
-  durationSeconds = 180,
+  config,
   onGameEnd,
   difficulty,
   initialSession,
   dailyChallengeDate,
 }: PlayGameProps) {
-  const puzzleTargetWords = targetWords ?? DEFAULT_PLAYABLE_WORDS;
-  const duration = Math.max(0, Math.floor(durationSeconds));
+  const rules = useMemo(() => resolveGameConfiguration(config), [config]);
+  const size = rules.boardSize;
+  const puzzleTargetWords = targetWords ?? rules.words;
+  const duration = rules.durationSeconds;
   const restoredRemainingMs = initialSession
     ? Math.max(0, initialSession.expiresAt - Date.now())
     : duration * 1000;
@@ -228,6 +232,8 @@ export function PlayGame({
     window.dispatchEvent(
       new CustomEvent("lettermaze:game-completed", {
         detail: {
+          ranked: rules.ranked,
+          mode: rules.mode,
           score: scoreRef.current,
           words: foundWordsRef.current,
           boardSize: size,
@@ -238,7 +244,7 @@ export function PlayGame({
       }),
     );
     onGameEnd?.({ score: scoreRef.current, wordsFound: wordsFoundRef.current });
-  }, [dailyChallengeDate, duration, onGameEnd, size]);
+  }, [dailyChallengeDate, duration, onGameEnd, size, rules.ranked, rules.mode]);
 
   const replay = () => {
     discardActiveGame(browserStorage);
@@ -306,6 +312,7 @@ export function PlayGame({
       : deadlineRef.current;
     saveActiveGame(browserStorage, {
       version: 1,
+      config: rules,
       difficulty,
       cells: [...cells] as Letter[],
       size,
@@ -314,7 +321,7 @@ export function PlayGame({
       score: scoreRef.current,
       expiresAt,
     });
-  }, [cells, difficulty, isGameOver, isPaused, size, puzzleTargetWords]);
+  }, [cells, difficulty, isGameOver, isPaused, size, puzzleTargetWords, rules]);
 
   useEffect(() => {
     persistGame();
@@ -344,7 +351,7 @@ export function PlayGame({
     const acceptedWord = submissions.current.submit(word);
     if (!acceptedWord) return false;
 
-    const points = scoreWord(acceptedWord);
+    const points = scoreWord(acceptedWord, rules.scoring);
     scoreRef.current += points;
     wordsFoundRef.current = submissions.current.size;
     foundWordsRef.current = [...foundWordsRef.current, acceptedWord];
@@ -353,7 +360,10 @@ export function PlayGame({
     setFoundWords((words) => [...words, acceptedWord]);
     setScoreUpdate((update) => ({ points, sequence: update.sequence + 1 }));
     queueMicrotask(persistGame);
-    if (wordsFoundRef.current === puzzleTargetWords.length)
+    if (
+      rules.endOnAllWordsFound &&
+      wordsFoundRef.current === puzzleTargetWords.length
+    )
       queueMicrotask(endGame);
     return true;
   };
@@ -471,6 +481,7 @@ export function PlayGame({
           </div>
 
           <AcceptedWordsPanel
+            scoring={rules.scoring}
             heading="Your words"
             headingId="results-accepted-words-heading"
             words={foundWords}
@@ -672,6 +683,7 @@ export function PlayGame({
           words={puzzleTargetWords}
         />
         <AcceptedWordsPanel
+          scoring={rules.scoring}
           headingId="accepted-words-heading"
           words={foundWords}
         />

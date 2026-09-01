@@ -1,3 +1,4 @@
+import { createNormalGameConfiguration } from "@lettermaze/game";
 import { act, fireEvent, render, screen, within } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { PlayGame } from "@/features/game";
@@ -101,9 +102,38 @@ function selectTreeRow() {
 }
 
 describe("PlayGame", () => {
+  it("uses custom scoring and completion modifiers without a mode branch", () => {
+    const config = {
+      ...createNormalGameConfiguration(),
+      mode: "custom",
+      modifiers: [
+        {
+          id: "bonus",
+          rules: {
+            durationSeconds: 45,
+            scoring: { tiers: [{ minLength: 1, points: 7 }], multiplier: 2 },
+            endOnAllWordsFound: false,
+          },
+        },
+      ],
+    };
+    render(<PlayGame cells={cells} config={config} targetWords={["LETTER"]} />);
+    selectLetterRow();
+    expect(screen.getByTestId("timer")).toHaveTextContent("0:45");
+    expect(screen.getByTestId("score")).toHaveTextContent("14");
+    expect(
+      screen.getByRole("list", { name: "Accepted words" }),
+    ).toHaveTextContent("+14 points");
+    expect(screen.getByRole("grid")).toBeInTheDocument();
+  });
+
   it("shows every target and the number still remaining when play begins", () => {
     render(
-      <PlayGame cells={cells} size={5} targetWords={["LETTER", "TREE"]} />,
+      <PlayGame
+        cells={cells}
+        config={createNormalGameConfiguration()}
+        targetWords={["LETTER", "TREE"]}
+      />,
     );
 
     const targetLists = screen.getAllByRole("list", { name: "Target words" });
@@ -118,7 +148,7 @@ describe("PlayGame", () => {
   });
 
   it("previews the selected word and clears it when selection ends", () => {
-    render(<PlayGame cells={cells} size={5} />);
+    render(<PlayGame cells={cells} config={createNormalGameConfiguration()} />);
     const board = screen.getByRole("grid");
     vi.spyOn(board, "getBoundingClientRect").mockReturnValue({
       left: 0,
@@ -169,7 +199,7 @@ describe("PlayGame", () => {
     render(
       <PlayGame
         cells={[...cells.slice(0, 20), "T", "R", "E", "E", "S"]}
-        size={5}
+        config={createNormalGameConfiguration()}
       />,
     );
 
@@ -223,8 +253,7 @@ describe("PlayGame", () => {
     render(
       <PlayGame
         cells={cells}
-        size={5}
-        durationSeconds={2}
+        config={{ ...createNormalGameConfiguration(), durationSeconds: 2 }}
         onGameEnd={onGameEnd}
       />,
     );
@@ -268,7 +297,7 @@ describe("PlayGame", () => {
   });
 
   it("explains an automatic pause when the tab is hidden", () => {
-    render(<PlayGame cells={cells} size={5} />);
+    render(<PlayGame cells={cells} config={createNormalGameConfiguration()} />);
     Object.defineProperty(document, "hidden", {
       configurable: true,
       value: true,

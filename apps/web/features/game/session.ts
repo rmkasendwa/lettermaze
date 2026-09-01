@@ -1,6 +1,8 @@
 import {
-  DEFAULT_PLAYABLE_WORDS,
-  DIFFICULTY_CONFIGS,
+  createNormalGameConfiguration,
+  isGameConfiguration,
+  resolveGameConfiguration,
+  type GameConfiguration,
   findWordPath,
   isDifficulty,
   scoreWord,
@@ -15,6 +17,7 @@ const SESSION_VERSION = 1;
 export interface ActiveGameSession {
   version: typeof SESSION_VERSION;
   difficulty: Difficulty;
+  config?: GameConfiguration;
   cells: Letter[];
   size: number;
   targetWords?: string[];
@@ -52,35 +55,55 @@ function isValidSession(value: unknown): value is ActiveGameSession {
   if (
     session.version !== SESSION_VERSION ||
     !isDifficulty(session.difficulty) ||
+    (session.config !== undefined && !isGameConfiguration(session.config)) ||
     !Number.isInteger(session.size) ||
     !Array.isArray(session.cells) ||
     !Array.isArray(session.foundWords) ||
-    (session.targetWords !== undefined && !Array.isArray(session.targetWords)) ||
+    (session.targetWords !== undefined &&
+      !Array.isArray(session.targetWords)) ||
     typeof session.score !== "number" ||
     !Number.isFinite(session.score) ||
     typeof session.expiresAt !== "number" ||
     !Number.isFinite(session.expiresAt)
-  ) return false;
+  )
+    return false;
 
-  const config = DIFFICULTY_CONFIGS[session.difficulty];
+  const config = resolveGameConfiguration(
+    session.config ?? createNormalGameConfiguration(session.difficulty),
+  );
   if (
     session.size !== config.boardSize ||
     session.cells.length !== session.size * session.size ||
-    session.cells.some((cell) => typeof cell !== "string" || !/^[A-Z]$/.test(cell)) ||
+    session.cells.some(
+      (cell) => typeof cell !== "string" || !/^[A-Z]$/.test(cell),
+    ) ||
     new Set(session.foundWords).size !== session.foundWords.length
-  ) return false;
+  )
+    return false;
 
   const board = { cells: session.cells as Letter[], size: session.size };
-  const targetWords = session.targetWords ?? DEFAULT_PLAYABLE_WORDS.filter((word) => findWordPath(board, word));
-  if (targetWords.length === 0 || new Set(targetWords).size !== targetWords.length || targetWords.some((word) =>
-    typeof word !== "string" ||
-    !(DEFAULT_PLAYABLE_WORDS as readonly string[]).includes(word) ||
-    !findWordPath(board, word)
-  )) return false;
-  if (session.foundWords.some((word) => !targetWords.includes(word))) return false;
+  const targetWords =
+    session.targetWords ??
+    config.words.filter((word) => findWordPath(board, word));
+  if (
+    targetWords.length === 0 ||
+    new Set(targetWords).size !== targetWords.length ||
+    targetWords.some(
+      (word) =>
+        typeof word !== "string" ||
+        !config.words.includes(word) ||
+        !findWordPath(board, word),
+    )
+  )
+    return false;
+  if (session.foundWords.some((word) => !targetWords.includes(word)))
+    return false;
 
-  return session.score === session.foundWords.reduce(
-    (total, word) => total + scoreWord(word),
-    0,
+  return (
+    session.score ===
+    session.foundWords.reduce(
+      (total, word) => total + scoreWord(word, config.scoring),
+      0,
+    )
   );
 }
