@@ -109,7 +109,8 @@ function TargetWordsPanel({
   headingId: string;
   words: readonly string[];
 }) {
-  const remainingCount = words.length - foundWords.length;
+  const foundWordSet = new Set(foundWords);
+  const remainingCount = words.filter((word) => !foundWordSet.has(word)).length;
 
   return (
     <section
@@ -129,7 +130,7 @@ function TargetWordsPanel({
       </div>
       <ul aria-label="Target words" className="mt-2 flex flex-wrap gap-1.5">
         {words.map((word) => {
-          const isFound = foundWords.includes(word);
+          const isFound = foundWordSet.has(word);
           return (
             <li
               aria-label={`${word}, ${isFound ? "found" : "not found"}`}
@@ -138,6 +139,7 @@ function TargetWordsPanel({
                   ? "rounded-md bg-emerald-100 px-2 py-1 text-sm font-bold uppercase text-emerald-800 line-through decoration-2 dark:bg-emerald-950 dark:text-emerald-200"
                   : "rounded-md bg-sky-100 px-2 py-1 text-sm font-bold uppercase text-sky-900 dark:bg-sky-950 dark:text-sky-100"
               }
+              data-found={isFound}
               key={word}
             >
               {word}

@@ -1,4 +1,4 @@
-import { act, fireEvent, render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen, within } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { PlayGame } from "@/features/game";
 
@@ -182,6 +182,16 @@ describe("PlayGame", () => {
     expect(screen.getAllByTestId("words-remaining")[0]).toHaveTextContent(
       "12 remaining",
     );
+    for (const list of screen.getAllByRole("list", { name: "Target words" })) {
+      const foundTree = within(list).getByRole("listitem", {
+        name: "TREE, found",
+      });
+      expect(foundTree).toHaveClass("line-through");
+      expect(foundTree).toHaveTextContent("TREE");
+      expect(
+        within(list).getByRole("listitem", { name: "LETTER, not found" }),
+      ).not.toHaveClass("line-through");
+    }
     selectLetterRow();
     expect(screen.getByTestId("word-preview")).toBeEmptyDOMElement();
     expect(screen.getByTestId("score")).toHaveTextContent("4");
@@ -202,6 +212,9 @@ describe("PlayGame", () => {
     selectLetterRow();
     expect(screen.getByTestId("score")).toHaveTextContent("4");
     expect(screen.getByTestId("words-found")).toHaveTextContent("2");
+    expect(screen.getAllByTestId("words-remaining")[0]).toHaveTextContent(
+      "11 remaining",
+    );
     expect(screen.getAllByText("LETTER")).toHaveLength(3);
   });
 
