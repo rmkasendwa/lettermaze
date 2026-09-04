@@ -47,6 +47,8 @@ export interface PlayGameProps {
   dailyChallengeDate?: string;
 }
 
+type GameEndReason = "completed" | "timed-out";
+
 const BOARD_MAX_SIZE = 608;
 const BOARD_EDGE_GUTTER = 12;
 
@@ -264,6 +266,9 @@ export function PlayGame({
   const [isGameOver, setIsGameOver] = useState(
     duration === 0 || restoredRemainingMs === 0,
   );
+  const [endReason, setEndReason] = useState<GameEndReason | null>(
+    duration === 0 ? "timed-out" : null,
+  );
   const [playerStatistics, setPlayerStatistics] = useState<PlayerStatistics>(
     emptyPlayerStatistics,
   );
@@ -276,40 +281,47 @@ export function PlayGame({
   const remainingMsRef = useRef(restoredRemainingMs);
   const endedRef = useRef(false);
 
-  const endGame = useCallback(() => {
-    if (endedRef.current) return;
-    endedRef.current = true;
-    discardActiveGame(browserStorage);
-    remainingMsRef.current = 0;
-    setRemainingSeconds(0);
-    setIsGameOver(true);
-    setSelectedIndexes([]);
-    const result = {
-      score: scoreRef.current,
-      words: foundWordsRef.current,
-      isDaily: Boolean(dailyChallengeDate),
-    };
-    const localDate = getLocalDate();
-    if (dailyChallengeDate) recordDailyCompletion(browserStorage, localDate);
-    const currentStatistics = getPlayerStatistics(browserStorage);
-    setNewPersonalBests(getNewPersonalBests(currentStatistics, result));
-    setPlayerStatistics(recordCompletedGame(browserStorage, result));
-    window.dispatchEvent(
-      new CustomEvent("lettermaze:game-completed", {
-        detail: {
-          ranked: rules.ranked,
-          mode: rules.mode,
-          score: scoreRef.current,
-          words: foundWordsRef.current,
-          boardSize: size,
-          durationSeconds: duration,
-          puzzleId: dailyChallengeDate,
-          localDate: dailyChallengeDate ? localDate : undefined,
-        },
-      }),
-    );
-    onGameEnd?.({ score: scoreRef.current, wordsFound: wordsFoundRef.current });
-  }, [dailyChallengeDate, duration, onGameEnd, size, rules.ranked, rules.mode]);
+  const endGame = useCallback(
+    (reason: GameEndReason = "timed-out") => {
+      if (endedRef.current) return;
+      endedRef.current = true;
+      discardActiveGame(browserStorage);
+      remainingMsRef.current = 0;
+      setRemainingSeconds(0);
+      setIsGameOver(true);
+      setEndReason(reason);
+      setSelectedIndexes([]);
+      const result = {
+        score: scoreRef.current,
+        words: foundWordsRef.current,
+        isDaily: Boolean(dailyChallengeDate),
+      };
+      const localDate = getLocalDate();
+      if (dailyChallengeDate) recordDailyCompletion(browserStorage, localDate);
+      const currentStatistics = getPlayerStatistics(browserStorage);
+      setNewPersonalBests(getNewPersonalBests(currentStatistics, result));
+      setPlayerStatistics(recordCompletedGame(browserStorage, result));
+      window.dispatchEvent(
+        new CustomEvent("lettermaze:game-completed", {
+          detail: {
+            ranked: rules.ranked,
+            mode: rules.mode,
+            score: scoreRef.current,
+            words: foundWordsRef.current,
+            boardSize: size,
+            durationSeconds: duration,
+            puzzleId: dailyChallengeDate,
+            localDate: dailyChallengeDate ? localDate : undefined,
+          },
+        }),
+      );
+      onGameEnd?.({
+        score: scoreRef.current,
+        wordsFound: wordsFoundRef.current,
+      });
+    },
+    [dailyChallengeDate, duration, onGameEnd, size, rules.ranked, rules.mode],
+  );
 
   const replay = () => {
     discardActiveGame(browserStorage);
@@ -328,6 +340,7 @@ export function PlayGame({
     setRemainingSeconds(duration);
     setPauseReason(null);
     setIsGameOver(duration === 0);
+    setEndReason(duration === 0 ? "timed-out" : null);
     setShareStatus("");
     setNewPersonalBests([]);
   };
@@ -363,7 +376,7 @@ export function PlayGame({
       const remainingMs = Math.max(0, deadlineRef.current - Date.now());
       remainingMsRef.current = remainingMs;
       setRemainingSeconds(Math.ceil(remainingMs / 1000));
-      if (remainingMs === 0) endGame();
+      if (remainingMs === 0) endGame("timed-out");
     };
     update();
     const timer = window.setInterval(update, 100);
@@ -429,7 +442,7 @@ export function PlayGame({
       rules.endOnAllWordsFound &&
       wordsFoundRef.current === puzzleTargetWords.length
     )
-      queueMicrotask(endGame);
+      queueMicrotask(() => endGame("completed"));
     return true;
   };
 
@@ -456,7 +469,7 @@ export function PlayGame({
       >
         <div className="bg-gradient-to-br from-sky-600 to-indigo-700 px-6 py-8 text-center text-white sm:px-10">
           <p className="text-sm font-semibold uppercase tracking-[0.2em] text-sky-100">
-            Time&apos;s up
+            {endReason === "completed" ? "Puzzle complete" : "Time's up"}
           </p>
           <h2 className="mt-2 text-3xl font-bold" id="results-heading">
             Game results
