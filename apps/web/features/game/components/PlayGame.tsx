@@ -235,19 +235,16 @@ export function PlayGame({
   const size = rules.boardSize;
   const puzzleTargetWords = targetWords ?? rules.words;
   const duration = rules.durationSeconds;
-  const restoredRemainingMs = initialSession
-    ? Math.max(0, initialSession.expiresAt - Date.now())
-    : duration * 1000;
-  const submissions = useRef(
-    new WordSubmissionTracker(createWordDictionary(puzzleTargetWords)),
-  );
-  const submissionsInitialized = useRef(false);
-  if (!submissionsInitialized.current) {
+  const restoredRemainingMs = duration * 1000;
+  const [submissions] = useState(() => {
+    const tracker = new WordSubmissionTracker(
+      createWordDictionary(puzzleTargetWords),
+    );
     for (const word of initialSession?.foundWords ?? []) {
-      submissions.current.submit(word);
+      tracker.submit(word);
     }
-    submissionsInitialized.current = true;
-  }
+    return tracker;
+  });
   const [foundWords, setFoundWords] = useState<string[]>(
     initialSession?.foundWords ?? [],
   );
@@ -316,7 +313,7 @@ export function PlayGame({
 
   const replay = () => {
     discardActiveGame(browserStorage);
-    submissions.current.reset();
+    submissions.reset();
     scoreRef.current = 0;
     wordsFoundRef.current = 0;
     foundWordsRef.current = [];
@@ -416,12 +413,12 @@ export function PlayGame({
   const submitPath = (indexes: readonly number[]) => {
     if (isPaused || isGameOver) return false;
     const word = indexes.map((index) => cells[index] ?? "").join("");
-    const acceptedWord = submissions.current.submit(word);
+    const acceptedWord = submissions.submit(word);
     if (!acceptedWord) return false;
 
     const points = scoreWord(acceptedWord, rules.scoring);
     scoreRef.current += points;
-    wordsFoundRef.current = submissions.current.size;
+    wordsFoundRef.current = submissions.size;
     foundWordsRef.current = [...foundWordsRef.current, acceptedWord];
     setScore(scoreRef.current);
     setWordsFound(wordsFoundRef.current);
