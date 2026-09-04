@@ -47,13 +47,25 @@ export function GameSetup() {
     useState<ActiveGameSession | null>(null);
   const [board, setBoard] = useState<GeneratedBoard | null>(null);
   const [showTutorial, setShowTutorial] = useState(false);
+  const [showSetup, setShowSetup] = useState(false);
   const activeDifficulty = restoredSession?.difficulty ?? difficulty;
 
   useEffect(() => {
     const session = loadActiveGame(browserStorage);
-    if (!session) return;
+    if (!session) {
+      if (browserStorage.get(TUTORIAL_STORAGE_KEY) !== true) {
+        // The first-game explanation is the only intentional interruption.
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+        setShowTutorial(true);
+        return;
+      }
+      const initialDifficulty = getPreferredDifficulty();
+      const config = createNormalGameConfiguration(initialDifficulty);
+      // Returning players go directly to a fresh puzzle.
+      setBoard(generateConfiguredBoard(config));
+      return;
+    }
     // Restoring persisted state is an intentional one-time external sync.
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     setRestoredSession(session);
     setBoard({
       cells: session.cells,
@@ -69,6 +81,7 @@ export function GameSetup() {
     const config = createNormalGameConfiguration(difficulty);
     browserStorage.set(DIFFICULTY_STORAGE_KEY, difficulty);
     setRestoredSession(null);
+    setShowSetup(false);
     setBoard(generateConfiguredBoard(config));
   };
 
@@ -91,6 +104,7 @@ export function GameSetup() {
             onClick={() => {
               discardActiveGame(browserStorage);
               setRestoredSession(null);
+              setShowSetup(true);
               setBoard(null);
             }}
             type="button"
@@ -99,6 +113,7 @@ export function GameSetup() {
           </button>
         </div>
         <PlayGame
+          key={board.cells.join("")}
           cells={board.cells}
           targetWords={
             board.targetWords?.length > 0 ? board.targetWords : undefined
@@ -109,8 +124,17 @@ export function GameSetup() {
           }
           difficulty={activeDifficulty}
           initialSession={restoredSession ?? undefined}
+          onPlayAgain={beginGame}
         />
       </div>
+    );
+  }
+
+  if (!showSetup && !showTutorial) {
+    return (
+      <p className="py-12 text-center text-sm text-slate-500" role="status">
+        Preparing puzzle…
+      </p>
     );
   }
 
