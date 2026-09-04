@@ -145,6 +145,13 @@ describe("PlayGame", () => {
     expect(screen.getAllByTestId("words-remaining")[0]).toHaveTextContent(
       "2 remaining",
     );
+    expect(screen.getByRole("progressbar")).toHaveAccessibleName(
+      "0 of 2 words found",
+    );
+    expect(screen.getByRole("progressbar")).toHaveAttribute(
+      "aria-valuemax",
+      "2",
+    );
   });
 
   it("previews the selected word and clears it when selection ends", () => {
@@ -210,7 +217,7 @@ describe("PlayGame", () => {
 
     selectTreeRow();
     expect(screen.getAllByTestId("words-remaining")[0]).toHaveTextContent(
-      "12 remaining",
+      "10 remaining",
     );
     const targetList = screen.getByRole("list", { name: "Target words" });
     const foundTree = within(targetList).getByRole("listitem", {
@@ -225,6 +232,9 @@ describe("PlayGame", () => {
     expect(screen.getByTestId("word-preview")).toBeEmptyDOMElement();
     expect(screen.getByTestId("score")).toHaveTextContent("4");
     expect(screen.getByTestId("words-found")).toHaveTextContent("2");
+    expect(screen.getByRole("progressbar")).toHaveAccessibleName(
+      "2 of 11 words found",
+    );
     expect(
       screen.getByTestId("score").querySelector(".score-points"),
     ).toHaveTextContent("+3");
@@ -242,7 +252,7 @@ describe("PlayGame", () => {
     expect(screen.getByTestId("score")).toHaveTextContent("4");
     expect(screen.getByTestId("words-found")).toHaveTextContent("2");
     expect(screen.getAllByTestId("words-remaining")[0]).toHaveTextContent(
-      "11 remaining",
+      "9 remaining",
     );
     expect(screen.getAllByText("LETTER")).toHaveLength(2);
   });
