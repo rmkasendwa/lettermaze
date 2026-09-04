@@ -659,10 +659,15 @@ export function PlayGame({
                 Words found
               </div>
               <div
+                aria-label={`${wordsFound} of ${puzzleTargetWords.length} words found`}
+                aria-valuemax={puzzleTargetWords.length}
+                aria-valuemin={0}
+                aria-valuenow={wordsFound}
                 className="text-lg font-bold tabular-nums sm:text-xl"
                 data-testid="words-found"
+                role="progressbar"
               >
-                {wordsFound}
+                {wordsFound} / {puzzleTargetWords.length}
               </div>
             </div>
             <button
