@@ -68,6 +68,23 @@ describe("board generation", () => {
     });
   });
 
+  it("shares compatible letters between target paths", () => {
+    const board = generateBoard({
+      size: 3,
+      words: ["CAT", "TREE"],
+      targetWordCount: 2,
+      random: () => 0.99,
+    });
+
+    expect(board.targetWords).toEqual(["CAT", "TREE"]);
+    expect(board.targetPaths[0]!.at(-1)).toEqual(board.targetPaths[1]![0]);
+    expect(
+      new Set(
+        board.targetPaths.flat().map(({ row, column }) => `${row},${column}`),
+      ),
+    ).toHaveLength(6);
+  });
+
   it("uses English weights instead of a uniform alphabet", () => {
     const random = createSeededRandom("frequency-sample");
     const counts: Record<string, number> = {};
