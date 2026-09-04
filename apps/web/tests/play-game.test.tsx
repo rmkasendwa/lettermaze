@@ -1,5 +1,12 @@
 import { createNormalGameConfiguration } from "@lettermaze/game";
-import { act, fireEvent, render, screen, within } from "@testing-library/react";
+import {
+  act,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+  within,
+} from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { PlayGame } from "@/features/game";
 
@@ -304,6 +311,26 @@ describe("PlayGame", () => {
     expect(screen.getByTestId("words-found")).toHaveTextContent("0");
     expect(screen.getByRole("grid")).toHaveAttribute("aria-disabled", "false");
     vi.useRealTimers();
+  });
+
+  it("finishes immediately after the final target word", async () => {
+    const onGameEnd = vi.fn();
+    render(
+      <PlayGame
+        cells={[...cells.slice(0, 20), "T", "R", "E", "E", "S"]}
+        config={createNormalGameConfiguration()}
+        targetWords={["TREE"]}
+        onGameEnd={onGameEnd}
+      />,
+    );
+
+    selectTreeRow();
+
+    await waitFor(() =>
+      expect(screen.getByText("Puzzle complete")).toBeInTheDocument(),
+    );
+    expect(screen.getByText("You found every word!")).toBeInTheDocument();
+    expect(onGameEnd).toHaveBeenCalledOnce();
   });
 
   it("explains an automatic pause when the tab is hidden", () => {
