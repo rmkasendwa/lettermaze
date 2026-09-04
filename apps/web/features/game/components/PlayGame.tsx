@@ -1,6 +1,13 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import {
   createWordDictionary,
   resolveGameConfiguration,
@@ -38,6 +45,65 @@ export interface PlayGameProps {
   difficulty?: Difficulty;
   initialSession?: ActiveGameSession;
   dailyChallengeDate?: string;
+}
+
+const BOARD_MAX_SIZE = 608;
+const BOARD_EDGE_GUTTER = 12;
+
+function useViewportBoardSize(
+  boardRef: React.RefObject<HTMLDivElement | null>,
+) {
+  const [boardSize, setBoardSize] = useState<number>();
+
+  useLayoutEffect(() => {
+    const board = boardRef.current;
+    if (!board) return;
+    const viewport = window.visualViewport;
+
+    const updateBoardSize = () => {
+      const viewportWidth =
+        viewport?.width ?? document.documentElement.clientWidth;
+      const viewportBottom =
+        (viewport?.offsetTop ?? 0) +
+        (viewport?.height ?? document.documentElement.clientHeight);
+      const boardTop = board.getBoundingClientRect().top;
+      const horizontalGutter = window.innerWidth < 640 ? 24 : 48;
+      const nextSize = Math.max(
+        0,
+        Math.floor(
+          Math.min(
+            BOARD_MAX_SIZE,
+            viewportWidth - horizontalGutter,
+            viewportBottom - boardTop - BOARD_EDGE_GUTTER,
+          ),
+        ),
+      );
+
+      setBoardSize((currentSize) =>
+        currentSize === nextSize ? currentSize : nextSize,
+      );
+    };
+
+    updateBoardSize();
+    window.addEventListener("resize", updateBoardSize);
+    viewport?.addEventListener("resize", updateBoardSize);
+    viewport?.addEventListener("scroll", updateBoardSize);
+
+    const observer =
+      typeof ResizeObserver === "undefined"
+        ? undefined
+        : new ResizeObserver(updateBoardSize);
+    if (board.parentElement) observer?.observe(board.parentElement);
+
+    return () => {
+      window.removeEventListener("resize", updateBoardSize);
+      viewport?.removeEventListener("resize", updateBoardSize);
+      viewport?.removeEventListener("scroll", updateBoardSize);
+      observer?.disconnect();
+    };
+  }, [boardRef]);
+
+  return boardSize;
 }
 
 function AcceptedWordsPanel({
@@ -163,6 +229,8 @@ export function PlayGame({
   initialSession,
   dailyChallengeDate,
 }: PlayGameProps) {
+  const boardContainerRef = useRef<HTMLDivElement>(null);
+  const viewportBoardSize = useViewportBoardSize(boardContainerRef);
   const rules = useMemo(() => resolveGameConfiguration(config), [config]);
   const size = rules.boardSize;
   const puzzleTargetWords = targetWords ?? rules.words;
@@ -539,7 +607,14 @@ export function PlayGame({
   return (
     <section aria-label="Current game" className="w-full">
       <div className="game-primary mx-auto w-fit max-w-full">
-        <div className="game-board-column flex min-w-0 flex-col gap-2">
+        <div
+          className="game-board-column flex min-w-0 flex-col gap-2"
+          style={
+            viewportBoardSize === undefined
+              ? undefined
+              : { width: `${viewportBoardSize}px` }
+          }
+        >
           <div
             className="grid grid-cols-[1fr_1fr_1fr_auto] items-stretch overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900"
             aria-label="Game status and controls"
@@ -629,7 +704,10 @@ export function PlayGame({
               </div>
             ) : null}
           </div>
-          <div className="game-board relative aspect-square w-full">
+          <div
+            className="game-board relative aspect-square w-full"
+            ref={boardContainerRef}
+          >
             {!isPaused ? (
               <div>
                 <Board

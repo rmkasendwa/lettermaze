@@ -32,21 +32,12 @@ body:has(.play-page) footer {
   display: none;
 }
 
-.game-board-column,
-.game-board {
+.game-board-column {
   width: min(calc(100vw - 1.5rem), calc(100dvh - 9rem), 38rem);
 }
 
 @media (min-width: 640px) {
-  .game-board-column,
-  .game-board {
-    width: min(calc(100vw - 3rem), calc(100dvh - 9rem), 38rem);
-  }
-}
-
-@media (min-width: 1024px) {
-  .game-board-column,
-  .game-board {
+  .game-board-column {
     width: min(calc(100vw - 3rem), calc(100dvh - 9rem), 38rem);
   }
 }
