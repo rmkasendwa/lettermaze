@@ -1,6 +1,10 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { DIFFICULTY_STORAGE_KEY, GameSetup } from "@/features/game";
+import {
+  DIFFICULTY_STORAGE_KEY,
+  GameSetup,
+  TUTORIAL_STORAGE_KEY,
+} from "@/features/game";
 import { ACTIVE_GAME_STORAGE_KEY } from "@/features/game/session";
 
 const restoredCells = [
@@ -23,7 +27,27 @@ const restoredCells = [
 ];
 
 describe("GameSetup", () => {
-  beforeEach(() => localStorage.clear());
+  beforeEach(() => {
+    localStorage.clear();
+    localStorage.setItem(TUTORIAL_STORAGE_KEY, JSON.stringify(true));
+  });
+
+  it("shows a compact tutorial once before the first game", () => {
+    localStorage.removeItem(TUTORIAL_STORAGE_KEY);
+    render(<GameSetup />);
+
+    fireEvent.click(screen.getByRole("button", { name: "Start Medium game" }));
+    expect(
+      screen.getByRole("dialog", { name: "Connect letters to find words" }),
+    ).toHaveTextContent("crossed out immediately");
+    expect(
+      screen.getByLabelText("Drag across adjacent letters C, A, T"),
+    ).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "Start playing" }));
+    expect(screen.getByRole("grid")).toBeInTheDocument();
+    expect(JSON.parse(localStorage.getItem(TUTORIAL_STORAGE_KEY)!)).toBe(true);
+  });
 
   it("lets the player choose a difficulty before generating the game", () => {
     render(<GameSetup />);

@@ -19,6 +19,7 @@ import {
 } from "../session";
 
 export const DIFFICULTY_STORAGE_KEY = "lettermaze.preferredDifficulty";
+export const TUTORIAL_STORAGE_KEY = "lettermaze.tutorialCompleted";
 
 function subscribeToPreferredDifficulty(onStoreChange: () => void) {
   const handleStorage = (event: StorageEvent) => {
@@ -45,6 +46,7 @@ export function GameSetup() {
   const [restoredSession, setRestoredSession] =
     useState<ActiveGameSession | null>(null);
   const [board, setBoard] = useState<GeneratedBoard | null>(null);
+  const [showTutorial, setShowTutorial] = useState(false);
   const activeDifficulty = restoredSession?.difficulty ?? difficulty;
 
   useEffect(() => {
@@ -63,11 +65,19 @@ export function GameSetup() {
     });
   }, []);
 
-  const startGame = () => {
+  const beginGame = () => {
     const config = createNormalGameConfiguration(difficulty);
     browserStorage.set(DIFFICULTY_STORAGE_KEY, difficulty);
     setRestoredSession(null);
     setBoard(generateConfiguredBoard(config));
+  };
+
+  const startGame = () => {
+    if (browserStorage.get(TUTORIAL_STORAGE_KEY) !== true) {
+      setShowTutorial(true);
+      return;
+    }
+    beginGame();
   };
 
   if (board) {
@@ -156,6 +166,59 @@ export function GameSetup() {
       >
         Start {DIFFICULTY_CONFIGS[difficulty].label} game
       </button>
+      <details className="mt-4 text-sm text-slate-600 dark:text-slate-300">
+        <summary className="cursor-pointer font-semibold">How to play</summary>
+        <p className="mt-2">
+          Drag across adjacent letters in any direction to spell one of the
+          listed target words. A cell cannot be reused within the same word.
+          Found targets are crossed out. Find every target before time runs out.
+        </p>
+      </details>
+      {showTutorial ? (
+        <div
+          aria-labelledby="tutorial-heading"
+          aria-modal="true"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 p-4"
+          role="dialog"
+        >
+          <div className="w-full max-w-sm rounded-2xl bg-white p-6 text-center shadow-2xl dark:bg-slate-900">
+            <p className="text-sm font-bold uppercase tracking-wider text-sky-600">
+              Quick start
+            </p>
+            <h2 className="mt-2 text-2xl font-bold" id="tutorial-heading">
+              Connect letters to find words
+            </h2>
+            <div
+              aria-label="Drag across adjacent letters C, A, T"
+              className="my-5 flex items-center justify-center gap-2"
+            >
+              {["C", "A", "T"].map((letter) => (
+                <span
+                  className="grid size-12 place-items-center rounded-xl bg-sky-100 text-xl font-black text-sky-900 ring-2 ring-sky-400"
+                  key={letter}
+                >
+                  {letter}
+                </span>
+              ))}
+            </div>
+            <p className="text-sm text-slate-600 dark:text-slate-300">
+              Drag through adjacent letters. When you find a listed word, it is
+              crossed out immediately.
+            </p>
+            <button
+              className="mt-6 min-h-12 w-full rounded-xl bg-sky-600 px-5 font-bold text-white hover:bg-sky-700"
+              onClick={() => {
+                browserStorage.set(TUTORIAL_STORAGE_KEY, true);
+                setShowTutorial(false);
+                beginGame();
+              }}
+              type="button"
+            >
+              Start playing
+            </button>
+          </div>
+        </div>
+      ) : null}
     </section>
   );
 }
