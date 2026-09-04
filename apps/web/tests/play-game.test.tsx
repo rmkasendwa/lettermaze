@@ -292,6 +292,12 @@ describe("PlayGame", () => {
     ).toBeInTheDocument();
     expect(screen.getByTestId("results-score")).toHaveTextContent("0");
     expect(screen.getByTestId("results-words-found")).toHaveTextContent("0");
+    expect(screen.getByTestId("results-words-found")).toHaveTextContent(
+      "0 / 11",
+    );
+    expect(screen.getByTestId("results-completion-time")).toHaveTextContent(
+      "0:02",
+    );
     expect(screen.getByText("No words accepted yet.")).toBeInTheDocument();
     expect(
       screen.getByRole("list", { name: "Missed words" }),
@@ -330,6 +336,12 @@ describe("PlayGame", () => {
       expect(screen.getByText("Puzzle complete")).toBeInTheDocument(),
     );
     expect(screen.getByText("You found every word!")).toBeInTheDocument();
+    expect(screen.getByTestId("results-words-found")).toHaveTextContent(
+      "1 / 1",
+    );
+    expect(screen.getByTestId("results-completion-time")).toHaveTextContent(
+      "0:00",
+    );
     expect(onGameEnd).toHaveBeenCalledOnce();
   });
 
