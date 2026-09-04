@@ -188,7 +188,7 @@ function TargetWordsPanel({
   return (
     <section
       aria-labelledby={headingId}
-      className="rounded-xl border border-slate-200 bg-white p-3 shadow-sm dark:border-slate-800 dark:bg-slate-900"
+      className="rounded-xl border border-slate-200 bg-white p-2.5 shadow-sm dark:border-slate-800 dark:bg-slate-900 sm:p-3"
     >
       <div className="flex items-baseline justify-between gap-3">
         <h2 className="text-sm font-bold" id={headingId}>
@@ -201,7 +201,10 @@ function TargetWordsPanel({
           {remainingCount} remaining
         </span>
       </div>
-      <ul aria-label="Target words" className="mt-2 flex flex-wrap gap-1.5">
+      <ul
+        aria-label="Target words"
+        className="mt-1.5 flex max-h-20 flex-wrap gap-1 overflow-y-auto overscroll-contain sm:mt-2 sm:max-h-28 sm:gap-1.5"
+      >
         {words.map((word) => {
           const isFound = foundWordSet.has(word);
           return (
@@ -209,8 +212,8 @@ function TargetWordsPanel({
               aria-label={`${word}, ${isFound ? "found" : "not found"}`}
               className={
                 isFound
-                  ? "flex gap-1 rounded-md bg-emerald-100 px-2 py-1 text-sm font-bold uppercase text-emerald-800 dark:bg-emerald-950 dark:text-emerald-200"
-                  : "flex gap-1 rounded-md bg-sky-100 px-2 py-1 text-sm font-bold uppercase text-sky-900 dark:bg-sky-950 dark:text-sky-100"
+                  ? "flex gap-1 rounded-md bg-emerald-100 px-1.5 py-0.5 text-xs font-bold uppercase text-emerald-800 dark:bg-emerald-950 dark:text-emerald-200 sm:px-2 sm:py-1 sm:text-sm"
+                  : "flex gap-1 rounded-md bg-sky-100 px-1.5 py-0.5 text-xs font-bold uppercase text-sky-900 dark:bg-sky-950 dark:text-sky-100 sm:px-2 sm:py-1 sm:text-sm"
               }
               data-found={isFound}
               key={word}
@@ -724,6 +727,12 @@ export function PlayGame({
               {isPaused ? "Resume" : "Pause"}
             </button>
           </div>
+          <TargetWordsPanel
+            foundWords={foundWords}
+            headingId="target-words-heading"
+            scoring={rules.scoring}
+            words={puzzleTargetWords}
+          />
           <div
             aria-atomic="true"
             aria-live="polite"
@@ -798,13 +807,7 @@ export function PlayGame({
           </div>
         </div>
       </div>
-      <div className="game-secondary mx-auto mt-10 grid max-w-3xl gap-4 sm:grid-cols-2">
-        <TargetWordsPanel
-          foundWords={foundWords}
-          headingId="target-words-heading"
-          scoring={rules.scoring}
-          words={puzzleTargetWords}
-        />
+      <div className="game-secondary mx-auto mt-8 max-w-xl">
         <AcceptedWordsPanel
           scoring={rules.scoring}
           headingId="accepted-words-heading"
