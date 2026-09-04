@@ -25,8 +25,34 @@ describe("shared game configuration", () => {
       generateConfiguredBoard(daily),
     );
     expect(generateConfiguredBoard(daily)).toEqual(
-      generateBoard({ size: 5, seed: "lettermaze:daily:v1:2026-09-02" }),
+      generateBoard({
+        size: 5,
+        seed: "lettermaze:daily:v1:2026-09-02",
+        words: daily.words,
+        targetWordCount: daily.targetWordCount,
+      }),
     );
+  });
+
+  it("builds each difficulty from an appropriate target-word set", () => {
+    const easy = createNormalGameConfiguration("easy");
+    const medium = createNormalGameConfiguration("medium");
+    const hard = createNormalGameConfiguration("hard");
+
+    expect(
+      easy.words.every((word) => word.length >= 3 && word.length <= 4),
+    ).toBe(true);
+    expect(
+      medium.words.every((word) => word.length >= 3 && word.length <= 6),
+    ).toBe(true);
+    expect(
+      hard.words.every((word) => word.length >= 4 && word.length <= 8),
+    ).toBe(true);
+    expect([
+      easy.targetWordCount,
+      medium.targetWordCount,
+      hard.targetWordCount,
+    ]).toEqual([4, 6, 7]);
   });
 
   it("adds a custom mode through rules and ordered modifiers", () => {

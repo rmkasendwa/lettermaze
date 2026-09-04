@@ -26,6 +26,21 @@ describe("difficulty configuration", () => {
     expect(hard.E / hard.Z).toBeLessThan(medium.E / medium.Z);
   });
 
+  it("increases target count and word length with difficulty", () => {
+    const easy = DIFFICULTY_CONFIGS.easy;
+    const medium = DIFFICULTY_CONFIGS.medium;
+    const hard = DIFFICULTY_CONFIGS.hard;
+
+    expect([
+      easy.targetWordCount,
+      medium.targetWordCount,
+      hard.targetWordCount,
+    ]).toEqual([4, 6, 7]);
+    expect(easy.maxWordLength).toBeLessThan(medium.maxWordLength);
+    expect(medium.maxWordLength).toBeLessThan(hard.maxWordLength);
+    expect(hard.minWordLength).toBeGreaterThan(easy.minWordLength);
+  });
+
   it("validates persisted difficulty values", () => {
     expect(isDifficulty("easy")).toBe(true);
     expect(isDifficulty("expert")).toBe(false);
