@@ -202,22 +202,40 @@ export function generateBoard(options: GenerateBoardOptions): GeneratedBoard {
     ];
   }
   const targetWords: string[] = [];
+  const targetOffsets: number[] = [];
   let usedCells = 0;
-  for (const word of candidates) {
-    if (targetWords.length === requestedCount) break;
-    if (usedCells + word.length <= fullPath.length) {
-      targetWords.push(word);
-      usedCells += word.length;
-    }
+  while (targetWords.length < requestedCount && candidates.length > 0) {
+    const previousWord = targetWords.at(-1);
+    const overlapIndex = previousWord
+      ? candidates.findIndex(
+          (word) =>
+            previousWord.at(-1) === word[0] &&
+            usedCells + word.length - 1 <= fullPath.length,
+        )
+      : -1;
+    const candidateIndex =
+      overlapIndex >= 0
+        ? overlapIndex
+        : candidates.findIndex(
+            (word) => usedCells + word.length <= fullPath.length,
+          );
+    if (candidateIndex < 0) break;
+
+    const [word] = candidates.splice(candidateIndex, 1);
+    const overlapsPrevious =
+      previousWord !== undefined && previousWord.at(-1) === word![0];
+    const pathOffset = usedCells - (overlapsPrevious ? 1 : 0);
+    targetWords.push(word!);
+    targetOffsets.push(pathOffset);
+    usedCells = pathOffset + word!.length;
   }
   if (targetWords.length === 0) {
     throw new RangeError("At least one target word must fit on the board.");
   }
   const targetPaths: Coordinate[][] = [];
-  let pathOffset = 0;
-  for (const word of targetWords) {
+  for (const [wordIndex, word] of targetWords.entries()) {
+    const pathOffset = targetOffsets[wordIndex]!;
     targetPaths.push(fullPath.slice(pathOffset, pathOffset + word.length));
-    pathOffset += word.length;
   }
   const guaranteedWord = targetWords[0]!;
   const guaranteedPath = targetPaths[0]!;
