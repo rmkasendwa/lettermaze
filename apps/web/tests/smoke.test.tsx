@@ -18,6 +18,7 @@ describe("project foundation", () => {
     expect(routes).toEqual({
       home: "/",
       play: "/play",
+      practice: "/practice",
       daily: "/daily",
       profile: "/profile",
       settings: "/settings",

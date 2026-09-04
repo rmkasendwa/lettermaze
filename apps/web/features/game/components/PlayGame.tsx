@@ -277,12 +277,8 @@ export function PlayGame({
     null,
   );
   const isPaused = pauseReason !== null;
-  const [isGameOver, setIsGameOver] = useState(
-    duration === 0 || restoredRemainingMs === 0,
-  );
-  const [endReason, setEndReason] = useState<GameEndReason | null>(
-    duration === 0 ? "timed-out" : null,
-  );
+  const [isGameOver, setIsGameOver] = useState(false);
+  const [endReason, setEndReason] = useState<GameEndReason | null>(null);
   const [completionSeconds, setCompletionSeconds] = useState(0);
   const [playerStatistics, setPlayerStatistics] = useState<PlayerStatistics>(
     emptyPlayerStatistics,
@@ -360,8 +356,8 @@ export function PlayGame({
     setScoreUpdate({ points: 0, sequence: 0 });
     setRemainingSeconds(duration);
     setPauseReason(null);
-    setIsGameOver(duration === 0);
-    setEndReason(duration === 0 ? "timed-out" : null);
+    setIsGameOver(false);
+    setEndReason(null);
     setCompletionSeconds(0);
     setShareStatus("");
     setNewPersonalBests([]);
@@ -386,7 +382,6 @@ export function PlayGame({
 
   useEffect(() => {
     if (duration === 0) {
-      endGame();
       return;
     }
     if (isPaused || isGameOver) return;
@@ -672,8 +667,14 @@ export function PlayGame({
                 className="text-lg font-bold tabular-nums sm:text-xl"
                 data-testid="timer"
               >
-                {Math.floor(remainingSeconds / 60)}:
-                {String(remainingSeconds % 60).padStart(2, "0")}
+                {duration === 0 ? (
+                  <span aria-label="Unlimited time">∞</span>
+                ) : (
+                  <>
+                    {Math.floor(remainingSeconds / 60)}:
+                    {String(remainingSeconds % 60).padStart(2, "0")}
+                  </>
+                )}
               </div>
             </div>
             <div className="border-l border-slate-200 px-2 py-1.5 text-center dark:border-slate-800 sm:py-2">

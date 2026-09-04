@@ -28,6 +28,12 @@ export default function HomePage() {
         >
           Daily Challenge
         </Link>
+        <Link
+          className="inline-flex min-h-11 items-center rounded-lg border border-slate-300 px-5 font-semibold hover:bg-slate-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-violet-600 dark:border-slate-700 dark:hover:bg-slate-800"
+          href={routes.practice}
+        >
+          Practice
+        </Link>
       </div>
       <Card className="mt-12 text-left">
         <h2 className="font-semibold">How it works</h2>
