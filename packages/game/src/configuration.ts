@@ -40,8 +40,12 @@ export function createNormalGameConfiguration(
     boardSize: settings.boardSize,
     durationSeconds: settings.durationSeconds,
     letterWeights: settings.letterWeights,
-    words: DEFAULT_PLAYABLE_WORDS,
-    targetWordCount: Math.max(3, settings.boardSize),
+    words: DEFAULT_PLAYABLE_WORDS.filter(
+      (word) =>
+        word.length >= settings.minWordLength &&
+        word.length <= settings.maxWordLength,
+    ),
+    targetWordCount: settings.targetWordCount,
     scoring: STANDARD_SCORING,
     seed: { kind: "random" },
     endOnAllWordsFound: true,

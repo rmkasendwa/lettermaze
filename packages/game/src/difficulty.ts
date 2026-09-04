@@ -14,6 +14,9 @@ export interface DifficultyConfig {
   readonly boardSize: number;
   readonly durationSeconds: number;
   readonly letterWeights: LetterWeights;
+  readonly minWordLength: number;
+  readonly maxWordLength: number;
+  readonly targetWordCount: number;
 }
 
 function adjustWeights(
@@ -60,6 +63,9 @@ export const DIFFICULTY_CONFIGS: Readonly<
     boardSize: 4,
     durationSeconds: 240,
     letterWeights: EASY_LETTER_WEIGHTS,
+    minWordLength: 3,
+    maxWordLength: 4,
+    targetWordCount: 4,
   },
   medium: {
     label: "Medium",
@@ -67,6 +73,9 @@ export const DIFFICULTY_CONFIGS: Readonly<
     boardSize: 5,
     durationSeconds: 180,
     letterWeights: ENGLISH_LETTER_FREQUENCIES,
+    minWordLength: 3,
+    maxWordLength: 6,
+    targetWordCount: 6,
   },
   hard: {
     label: "Hard",
@@ -74,6 +83,9 @@ export const DIFFICULTY_CONFIGS: Readonly<
     boardSize: 6,
     durationSeconds: 120,
     letterWeights: HARD_LETTER_WEIGHTS,
+    minWordLength: 4,
+    maxWordLength: 8,
+    targetWordCount: 7,
   },
 };
 
