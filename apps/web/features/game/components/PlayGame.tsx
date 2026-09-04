@@ -174,10 +174,12 @@ function AcceptedWordsPanel({
 function TargetWordsPanel({
   foundWords,
   headingId,
+  scoring,
   words,
 }: {
   foundWords: readonly string[];
   headingId: string;
+  scoring: ScoringRules;
   words: readonly string[];
 }) {
   const foundWordSet = new Set(foundWords);
@@ -207,13 +209,20 @@ function TargetWordsPanel({
               aria-label={`${word}, ${isFound ? "found" : "not found"}`}
               className={
                 isFound
-                  ? "rounded-md bg-emerald-100 px-2 py-1 text-sm font-bold uppercase text-emerald-800 line-through decoration-2 dark:bg-emerald-950 dark:text-emerald-200"
-                  : "rounded-md bg-sky-100 px-2 py-1 text-sm font-bold uppercase text-sky-900 dark:bg-sky-950 dark:text-sky-100"
+                  ? "flex gap-1 rounded-md bg-emerald-100 px-2 py-1 text-sm font-bold uppercase text-emerald-800 dark:bg-emerald-950 dark:text-emerald-200"
+                  : "flex gap-1 rounded-md bg-sky-100 px-2 py-1 text-sm font-bold uppercase text-sky-900 dark:bg-sky-950 dark:text-sky-100"
               }
               data-found={isFound}
               key={word}
             >
-              {word}
+              <span
+                className={isFound ? "line-through decoration-2" : undefined}
+              >
+                {word}
+              </span>
+              <span aria-hidden="true" className="opacity-60">
+                +{scoreWord(word, scoring)}
+              </span>
             </li>
           );
         })}
@@ -773,6 +782,7 @@ export function PlayGame({
         <TargetWordsPanel
           foundWords={foundWords}
           headingId="target-words-heading"
+          scoring={rules.scoring}
           words={puzzleTargetWords}
         />
         <AcceptedWordsPanel

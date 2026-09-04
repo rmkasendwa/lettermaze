@@ -8,13 +8,11 @@ export interface ScoringRules {
 }
 
 export const STANDARD_SCORING: ScoringRules = {
-  tiers: [
-    { minLength: 3, points: 1 },
-    { minLength: 5, points: 2 },
-    { minLength: 6, points: 3 },
-    { minLength: 7, points: 5 },
-    { minLength: 8, points: 11 },
-  ],
+  // One point per letter keeps every target's value immediately predictable.
+  tiers: Array.from({ length: 26 }, (_, index) => ({
+    minLength: index + 1,
+    points: index + 1,
+  })),
   multiplier: 1,
 };
 
