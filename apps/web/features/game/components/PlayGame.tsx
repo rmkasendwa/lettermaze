@@ -278,6 +278,7 @@ export function PlayGame({
   const [endReason, setEndReason] = useState<GameEndReason | null>(
     duration === 0 ? "timed-out" : null,
   );
+  const [completionSeconds, setCompletionSeconds] = useState(0);
   const [playerStatistics, setPlayerStatistics] = useState<PlayerStatistics>(
     emptyPlayerStatistics,
   );
@@ -294,6 +295,12 @@ export function PlayGame({
     (reason: GameEndReason = "timed-out") => {
       if (endedRef.current) return;
       endedRef.current = true;
+      setCompletionSeconds(
+        Math.min(
+          duration,
+          Math.max(0, duration - Math.ceil(remainingMsRef.current / 1000)),
+        ),
+      );
       discardActiveGame(browserStorage);
       remainingMsRef.current = 0;
       setRemainingSeconds(0);
@@ -350,6 +357,7 @@ export function PlayGame({
     setPauseReason(null);
     setIsGameOver(duration === 0);
     setEndReason(duration === 0 ? "timed-out" : null);
+    setCompletionSeconds(0);
     setShareStatus("");
     setNewPersonalBests([]);
   };
@@ -518,7 +526,7 @@ export function PlayGame({
               </ul>
             </div>
           ) : null}
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
             <div className="rounded-xl bg-slate-100 p-4 dark:bg-slate-800">
               <p className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                 Words found
@@ -527,7 +535,19 @@ export function PlayGame({
                 className="mt-1 text-2xl font-bold tabular-nums"
                 data-testid="results-words-found"
               >
-                {foundWords.length}
+                {foundWords.length} / {puzzleTargetWords.length}
+              </p>
+            </div>
+            <div className="rounded-xl bg-slate-100 p-4 dark:bg-slate-800">
+              <p className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                Completion time
+              </p>
+              <p
+                className="mt-1 text-2xl font-bold tabular-nums"
+                data-testid="results-completion-time"
+              >
+                {Math.floor(completionSeconds / 60)}:
+                {String(completionSeconds % 60).padStart(2, "0")}
               </p>
             </div>
             <div className="rounded-xl bg-slate-100 p-4 dark:bg-slate-800">
