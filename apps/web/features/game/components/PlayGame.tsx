@@ -46,6 +46,7 @@ export interface PlayGameProps {
   difficulty?: Difficulty;
   initialSession?: ActiveGameSession;
   dailyChallengeDate?: string;
+  trackDailyStreak?: boolean;
 }
 
 type GameEndReason = "completed" | "timed-out";
@@ -244,6 +245,7 @@ export function PlayGame({
   difficulty,
   initialSession,
   dailyChallengeDate,
+  trackDailyStreak = Boolean(dailyChallengeDate),
 }: PlayGameProps) {
   const boardContainerRef = useRef<HTMLDivElement>(null);
   const viewportBoardSize = useViewportBoardSize(boardContainerRef);
@@ -314,7 +316,8 @@ export function PlayGame({
         isDaily: Boolean(dailyChallengeDate),
       };
       const localDate = getLocalDate();
-      if (dailyChallengeDate) recordDailyCompletion(browserStorage, localDate);
+      if (dailyChallengeDate && trackDailyStreak)
+        recordDailyCompletion(browserStorage, localDate);
       const currentStatistics = getPlayerStatistics(browserStorage);
       setNewPersonalBests(getNewPersonalBests(currentStatistics, result));
       setPlayerStatistics(recordCompletedGame(browserStorage, result));
@@ -337,7 +340,15 @@ export function PlayGame({
         wordsFound: wordsFoundRef.current,
       });
     },
-    [dailyChallengeDate, duration, onGameEnd, size, rules.ranked, rules.mode],
+    [
+      dailyChallengeDate,
+      duration,
+      onGameEnd,
+      size,
+      rules.ranked,
+      rules.mode,
+      trackDailyStreak,
+    ],
   );
 
   const replay = () => {

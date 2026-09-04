@@ -28,6 +28,8 @@ function formatCountdown(milliseconds: number): string {
 
 export function DailyChallenge({ puzzleId }: { puzzleId: string }) {
   const { user } = useAccount();
+  const todayPuzzleId = getUtcPuzzleId();
+  const isArchived = puzzleId !== todayPuzzleId;
   const dailyConfig = useMemo(
     () => createDailyGameConfiguration(puzzleId),
     [puzzleId],
@@ -40,10 +42,10 @@ export function DailyChallenge({ puzzleId }: { puzzleId: string }) {
   const [rankedAttemptUsed, setRankedAttemptUsed] = useState(false);
   const config = useMemo(
     () =>
-      rankedAttemptUsed
+      isArchived || rankedAttemptUsed
         ? createPracticeGameConfiguration(dailyConfig)
         : dailyConfig,
-    [rankedAttemptUsed, dailyConfig],
+    [isArchived, rankedAttemptUsed, dailyConfig],
   );
   const [submissionStatus, setSubmissionStatus] = useState("");
   const [leaderboard, setLeaderboard] = useState<Leaderboard | null>(null);
@@ -51,6 +53,8 @@ export function DailyChallenge({ puzzleId }: { puzzleId: string }) {
   // Keep the server and first client render identical. The live value is filled
   // in after hydration, when both calculations use the browser's clock.
   const [untilNext, setUntilNext] = useState<number | null>(null);
+  const completionKey = `daily-completed:${puzzleId}`;
+  const [previouslyCompleted, setPreviouslyCompleted] = useState(false);
 
   const loadLeaderboard = useCallback(
     async (playerId?: string) => {
@@ -67,15 +71,18 @@ export function DailyChallenge({ puzzleId }: { puzzleId: string }) {
   useEffect(() => {
     const hydrationTimer = window.setTimeout(() => {
       setRankedAttemptUsed(browserStorage.get(attemptKey) === true);
+      setPreviouslyCompleted(browserStorage.get(completionKey) === true);
       setStreak(getDailyStreak(browserStorage));
+      if (isArchived) return;
       void loadLeaderboard(
         browserStorage.get<string>("daily-player-id") ?? undefined,
       ).catch(() => setLeaderboard(null));
     }, 0);
     return () => window.clearTimeout(hydrationTimer);
-  }, [attemptKey, loadLeaderboard]);
+  }, [attemptKey, completionKey, isArchived, loadLeaderboard]);
 
   useEffect(() => {
+    if (isArchived) return;
     if (!user) return;
     const localDate = getLocalDate();
     void apiRequest(
@@ -89,9 +96,10 @@ export function DailyChallenge({ puzzleId }: { puzzleId: string }) {
         })),
       )
       .catch(() => undefined);
-  }, [user]);
+  }, [isArchived, user]);
 
   useEffect(() => {
+    if (isArchived) return;
     const update = () => {
       if (getUtcPuzzleId() !== puzzleId) {
         window.location.reload();
@@ -102,10 +110,12 @@ export function DailyChallenge({ puzzleId }: { puzzleId: string }) {
     const timer = window.setInterval(update, 1000);
     update();
     return () => window.clearInterval(timer);
-  }, [puzzleId]);
+  }, [isArchived, puzzleId]);
 
   const finish = useCallback(
     async (result: { score: number; wordsFound: number }) => {
+      browserStorage.set(completionKey, true);
+      setPreviouslyCompleted(true);
       setStreak(getDailyStreak(browserStorage));
       if (!config.ranked || browserStorage.get(attemptKey) === true) {
         setSubmissionStatus("Replay complete — rankings are unchanged.");
@@ -133,39 +143,71 @@ export function DailyChallenge({ puzzleId }: { puzzleId: string }) {
         );
       }
     },
-    [attemptKey, loadLeaderboard, puzzleId, config.ranked],
+    [attemptKey, completionKey, loadLeaderboard, puzzleId, config.ranked],
   );
 
   return (
     <main className="mx-auto flex w-full max-w-3xl flex-col items-center px-4 py-6 sm:px-6 sm:py-10">
       <div className="mb-5 w-full text-center">
         <p className="text-sm font-semibold uppercase tracking-[0.18em] text-sky-700 dark:text-sky-300">
-          Daily puzzle · {puzzleId} UTC
+          {isArchived ? "Archived puzzle" : "Daily puzzle"} · {puzzleId} UTC
         </p>
         <h1 className="mt-1 text-3xl font-bold">LetterMaze Daily</h1>
-        <div
-          className="mt-3 flex justify-center gap-3"
-          aria-label="Daily streak progress"
-        >
-          <span className="rounded-full bg-orange-100 px-4 py-1.5 text-sm font-bold text-orange-800 dark:bg-orange-950 dark:text-orange-200">
-            🔥 {streak.current} day current streak
-          </span>
-          <span className="rounded-full bg-violet-100 px-4 py-1.5 text-sm font-bold text-violet-800 dark:bg-violet-950 dark:text-violet-200">
-            Best: {streak.longest} days
-          </span>
-        </div>
-        <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">
-          Next puzzle in{" "}
-          <span
-            className="font-bold tabular-nums"
-            data-testid="daily-countdown"
+        <form action="/daily" className="mt-3 flex justify-center gap-2">
+          <label className="sr-only" htmlFor="archive-date">
+            Choose a previous daily puzzle
+          </label>
+          <input
+            className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-900"
+            defaultValue={puzzleId}
+            id="archive-date"
+            max={todayPuzzleId}
+            name="date"
+            type="date"
+          />
+          <button
+            className="rounded-lg border border-slate-300 px-3 py-2 text-sm font-bold dark:border-slate-700"
+            type="submit"
           >
-            {untilNext === null ? "--:--:--" : formatCountdown(untilNext)}
-          </span>
-          {leaderboard == null
-            ? ""
-            : ` · ${leaderboard.totalPlayers} ranked player${leaderboard.totalPlayers === 1 ? "" : "s"}`}
-        </p>
+            Open puzzle
+          </button>
+        </form>
+        {!isArchived ? (
+          <>
+            <div
+              className="mt-3 flex justify-center gap-3"
+              aria-label="Daily streak progress"
+            >
+              <span className="rounded-full bg-orange-100 px-4 py-1.5 text-sm font-bold text-orange-800 dark:bg-orange-950 dark:text-orange-200">
+                🔥 {streak.current} day current streak
+              </span>
+              <span className="rounded-full bg-violet-100 px-4 py-1.5 text-sm font-bold text-violet-800 dark:bg-violet-950 dark:text-violet-200">
+                Best: {streak.longest} days
+              </span>
+            </div>
+            <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">
+              Next puzzle in{" "}
+              <span
+                className="font-bold tabular-nums"
+                data-testid="daily-countdown"
+              >
+                {untilNext === null ? "--:--:--" : formatCountdown(untilNext)}
+              </span>
+              {leaderboard == null
+                ? ""
+                : ` · ${leaderboard.totalPlayers} ranked player${leaderboard.totalPlayers === 1 ? "" : "s"}`}
+            </p>
+          </>
+        ) : (
+          <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">
+            Archive practice · Rankings are unchanged
+          </p>
+        )}
+        {isArchived && previouslyCompleted ? (
+          <p className="mt-1 text-sm font-semibold text-emerald-700 dark:text-emerald-300">
+            You previously completed this puzzle.
+          </p>
+        ) : null}
         {rankedAttemptUsed ? (
           <p className="mt-1 text-sm font-medium text-amber-700 dark:text-amber-300">
             You have used today&apos;s ranked attempt. Replays are for practice.
@@ -184,9 +226,10 @@ export function DailyChallenge({ puzzleId }: { puzzleId: string }) {
           dailyChallengeDate={puzzleId}
           config={config}
           onGameEnd={finish}
+          trackDailyStreak={!isArchived}
         />
       </div>
-      <LeaderboardPanel leaderboard={leaderboard} />
+      {!isArchived ? <LeaderboardPanel leaderboard={leaderboard} /> : null}
     </main>
   );
 }
