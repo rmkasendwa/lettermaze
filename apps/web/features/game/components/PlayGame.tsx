@@ -42,6 +42,7 @@ export interface PlayGameProps {
   config: GameConfiguration;
   targetWords?: readonly string[];
   onGameEnd?: (result: { score: number; wordsFound: number }) => void;
+  onPlayAgain?: () => void;
   difficulty?: Difficulty;
   initialSession?: ActiveGameSession;
   dailyChallengeDate?: string;
@@ -239,6 +240,7 @@ export function PlayGame({
   targetWords,
   config,
   onGameEnd,
+  onPlayAgain,
   difficulty,
   initialSession,
   dailyChallengeDate,
@@ -630,7 +632,7 @@ export function PlayGame({
             </button>
             <button
               className="min-h-12 rounded-xl border border-slate-300 bg-white px-5 font-bold shadow-sm transition-colors hover:bg-slate-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-600 dark:border-slate-700 dark:bg-slate-900 dark:hover:bg-slate-800"
-              onClick={replay}
+              onClick={onPlayAgain ?? replay}
               type="button"
             >
               Play again

@@ -7,7 +7,7 @@ export default function HomePage() {
   return (
     <section className="mx-auto max-w-2xl py-10 text-center">
       <p className="font-semibold text-violet-600">
-        A word puzzle built to grow
+        A quick word hunt through a maze of letters
       </p>
       <h1 className="mt-3 text-4xl font-bold tracking-tight sm:text-6xl">
         {appConfig.name}
@@ -30,10 +30,11 @@ export default function HomePage() {
         </Link>
       </div>
       <Card className="mt-12 text-left">
-        <h2 className="font-semibold">Coming next</h2>
+        <h2 className="font-semibold">How it works</h2>
         <p className="mt-2 text-slate-600 dark:text-slate-300">
-          A focused, testable game-domain foundation. Gameplay is intentionally
-          not part of this bootstrap.
+          Find each listed word by dragging through adjacent letters. Cross out
+          every target before time runs out, then jump straight into another
+          puzzle.
         </p>
       </Card>
     </section>

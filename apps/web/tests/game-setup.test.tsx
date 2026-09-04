@@ -36,7 +36,6 @@ describe("GameSetup", () => {
     localStorage.removeItem(TUTORIAL_STORAGE_KEY);
     render(<GameSetup />);
 
-    fireEvent.click(screen.getByRole("button", { name: "Start Medium game" }));
     expect(
       screen.getByRole("dialog", { name: "Connect letters to find words" }),
     ).toHaveTextContent("crossed out immediately");
@@ -49,10 +48,15 @@ describe("GameSetup", () => {
     expect(JSON.parse(localStorage.getItem(TUTORIAL_STORAGE_KEY)!)).toBe(true);
   });
 
-  it("lets the player choose a difficulty before generating the game", () => {
+  it("starts immediately and keeps difficulty available as a secondary choice", () => {
     render(<GameSetup />);
 
-    expect(screen.queryByRole("grid")).not.toBeInTheDocument();
+    expect(screen.getByRole("grid")).toHaveAttribute("aria-rowcount", "5");
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "Change difficulty. Current difficulty: Medium",
+      }),
+    );
     fireEvent.click(screen.getByRole("radio", { name: /Hard/ }));
     fireEvent.click(screen.getByRole("button", { name: "Start Hard game" }));
 
@@ -68,10 +72,12 @@ describe("GameSetup", () => {
     render(<GameSetup />);
 
     await waitFor(() =>
-      expect(screen.getByRole("radio", { name: /Easy/ })).toBeChecked(),
+      expect(screen.getByRole("grid")).toHaveAttribute("aria-rowcount", "4"),
     );
     expect(
-      screen.getByRole("button", { name: "Start Easy game" }),
+      screen.getByRole("button", {
+        name: "Change difficulty. Current difficulty: Easy",
+      }),
     ).toBeInTheDocument();
   });
 
@@ -119,7 +125,9 @@ describe("GameSetup", () => {
 
     render(<GameSetup />);
 
-    expect(screen.queryByRole("grid")).not.toBeInTheDocument();
-    expect(localStorage.getItem(ACTIVE_GAME_STORAGE_KEY)).toBeNull();
+    expect(screen.getByRole("grid")).toHaveAttribute("aria-rowcount", "5");
+    expect(
+      JSON.parse(localStorage.getItem(ACTIVE_GAME_STORAGE_KEY)!),
+    ).toMatchObject({ difficulty: "medium", score: 0 });
   });
 });
