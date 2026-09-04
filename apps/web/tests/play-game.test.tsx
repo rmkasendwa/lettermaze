@@ -230,33 +230,33 @@ describe("PlayGame", () => {
     const foundTree = within(targetList).getByRole("listitem", {
       name: "TREE, found",
     });
-    expect(foundTree).toHaveClass("line-through");
-    expect(foundTree).toHaveTextContent("TREE");
+    expect(within(foundTree).getByText("TREE")).toHaveClass("line-through");
+    expect(foundTree).toHaveTextContent("TREE+4");
     expect(
       within(targetList).getByRole("listitem", { name: "LETTER, not found" }),
     ).not.toHaveClass("line-through");
     selectLetterRow();
     expect(screen.getByTestId("word-preview")).toBeEmptyDOMElement();
-    expect(screen.getByTestId("score")).toHaveTextContent("4");
+    expect(screen.getByTestId("score")).toHaveTextContent("10");
     expect(screen.getByTestId("words-found")).toHaveTextContent("2");
     expect(screen.getByRole("progressbar")).toHaveAccessibleName(
       "2 of 11 words found",
     );
     expect(
       screen.getByTestId("score").querySelector(".score-points"),
-    ).toHaveTextContent("+3");
+    ).toHaveTextContent("+6");
     const acceptedWords = screen.getByRole("list", { name: "Accepted words" });
     expect(acceptedWords).toHaveTextContent("LETTER");
-    expect(acceptedWords).toHaveTextContent("+3 points");
+    expect(acceptedWords).toHaveTextContent("+6 points");
     expect(acceptedWords).toHaveTextContent("TREE");
-    expect(acceptedWords).toHaveTextContent("+1 point");
+    expect(acceptedWords).toHaveTextContent("+4 points");
     expect(
       [...acceptedWords.querySelectorAll("li")].map((item) => item.textContent),
-    ).toEqual(["LETTER+3 points", "TREE+1 point"]);
+    ).toEqual(["LETTER+6 points", "TREE+4 points"]);
     expect(screen.getAllByText("LETTER")).toHaveLength(2);
 
     selectLetterRow();
-    expect(screen.getByTestId("score")).toHaveTextContent("4");
+    expect(screen.getByTestId("score")).toHaveTextContent("10");
     expect(screen.getByTestId("words-found")).toHaveTextContent("2");
     expect(screen.getAllByTestId("words-remaining")[0]).toHaveTextContent(
       "9 remaining",

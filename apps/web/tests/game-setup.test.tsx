@@ -62,7 +62,7 @@ describe("GameSetup", () => {
         cells: restoredCells,
         size: 4,
         foundWords: ["TREE"],
-        score: 1,
+        score: 4,
         expiresAt: Date.now() + 90_000,
       }),
     );
@@ -71,7 +71,7 @@ describe("GameSetup", () => {
 
     expect(screen.getByRole("grid")).toHaveAttribute("aria-rowcount", "4");
     expect(screen.getByTestId("timer")).toHaveTextContent("1:30");
-    expect(screen.getByTestId("score")).toHaveTextContent("1");
+    expect(screen.getByTestId("score")).toHaveTextContent("4");
     expect(screen.getByTestId("words-found")).toHaveTextContent("1");
     expect(
       screen.getByRole("list", { name: "Accepted words" }),
