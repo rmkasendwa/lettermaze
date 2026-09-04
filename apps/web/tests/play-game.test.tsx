@@ -159,6 +159,10 @@ describe("PlayGame", () => {
       "aria-valuemax",
       "2",
     );
+    expect(
+      targetLists[0]!.compareDocumentPosition(screen.getByRole("grid")) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
   });
 
   it("previews the selected word and clears it when selection ends", () => {
