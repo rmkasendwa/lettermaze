@@ -50,6 +50,8 @@ export function GameSetup() {
   useEffect(() => {
     const session = loadActiveGame(browserStorage);
     if (!session) return;
+    // Restoring persisted state is an intentional one-time external sync.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setRestoredSession(session);
     setBoard({
       cells: session.cells,

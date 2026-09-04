@@ -48,12 +48,22 @@ describe("board generation", () => {
     expect(new Set(board.targetWords).size).toBe(board.targetWords.length);
     expect(board.targetPaths).toHaveLength(board.targetWords.length);
     board.targetPaths.forEach((path, wordIndex) => {
-      expect(path.map(({ row, column }) => board.cells[row * board.size + column]).join(""))
-        .toBe(board.targetWords[wordIndex]);
-      expect(new Set(path.map(({ row, column }) => `${row},${column}`)).size).toBe(path.length);
+      expect(
+        path
+          .map(({ row, column }) => board.cells[row * board.size + column])
+          .join(""),
+      ).toBe(board.targetWords[wordIndex]);
+      expect(
+        new Set(path.map(({ row, column }) => `${row},${column}`)).size,
+      ).toBe(path.length);
       path.slice(1).forEach((coordinate, index) => {
         const previous = path[index]!;
-        expect(Math.max(Math.abs(previous.row - coordinate.row), Math.abs(previous.column - coordinate.column))).toBe(1);
+        expect(
+          Math.max(
+            Math.abs(previous.row - coordinate.row),
+            Math.abs(previous.column - coordinate.column),
+          ),
+        ).toBe(1);
       });
     });
   });

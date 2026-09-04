@@ -4,10 +4,22 @@ import { DIFFICULTY_STORAGE_KEY, GameSetup } from "@/features/game";
 import { ACTIVE_GAME_STORAGE_KEY } from "@/features/game/session";
 
 const restoredCells = [
-  "T", "R", "E", "E",
-  "A", "B", "C", "D",
-  "E", "F", "G", "H",
-  "I", "J", "K", "L",
+  "T",
+  "R",
+  "E",
+  "E",
+  "A",
+  "B",
+  "C",
+  "D",
+  "E",
+  "F",
+  "G",
+  "H",
+  "I",
+  "J",
+  "K",
+  "L",
 ];
 
 describe("GameSetup", () => {
@@ -42,15 +54,18 @@ describe("GameSetup", () => {
   it("restores a compatible active board, words, score, and remaining time", () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date("2026-08-16T12:00:00Z"));
-    localStorage.setItem(ACTIVE_GAME_STORAGE_KEY, JSON.stringify({
-      version: 1,
-      difficulty: "easy",
-      cells: restoredCells,
-      size: 4,
-      foundWords: ["TREE"],
-      score: 1,
-      expiresAt: Date.now() + 90_000,
-    }));
+    localStorage.setItem(
+      ACTIVE_GAME_STORAGE_KEY,
+      JSON.stringify({
+        version: 1,
+        difficulty: "easy",
+        cells: restoredCells,
+        size: 4,
+        foundWords: ["TREE"],
+        score: 1,
+        expiresAt: Date.now() + 90_000,
+      }),
+    );
 
     render(<GameSetup />);
 
@@ -58,20 +73,25 @@ describe("GameSetup", () => {
     expect(screen.getByTestId("timer")).toHaveTextContent("1:30");
     expect(screen.getByTestId("score")).toHaveTextContent("1");
     expect(screen.getByTestId("words-found")).toHaveTextContent("1");
-    expect(screen.getByRole("list", { name: "Accepted words" })).toHaveTextContent("TREE");
+    expect(
+      screen.getByRole("list", { name: "Accepted words" }),
+    ).toHaveTextContent("TREE");
     vi.useRealTimers();
   });
 
   it("discards expired and invalid active sessions", () => {
-    localStorage.setItem(ACTIVE_GAME_STORAGE_KEY, JSON.stringify({
-      version: 1,
-      difficulty: "easy",
-      cells: restoredCells,
-      size: 4,
-      foundWords: [],
-      score: 99,
-      expiresAt: Date.now() - 1,
-    }));
+    localStorage.setItem(
+      ACTIVE_GAME_STORAGE_KEY,
+      JSON.stringify({
+        version: 1,
+        difficulty: "easy",
+        cells: restoredCells,
+        size: 4,
+        foundWords: [],
+        score: 99,
+        expiresAt: Date.now() - 1,
+      }),
+    );
 
     render(<GameSetup />);
 

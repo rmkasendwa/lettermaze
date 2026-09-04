@@ -157,9 +157,13 @@ function createSnakePath(size: number, random: RandomSource): Coordinate[] {
 }
 
 function normalizeWords(words: readonly string[], capacity: number): string[] {
-  return [...new Set(words
-    .map((word) => word.trim().toUpperCase())
-    .filter((word) => /^[A-Z]+$/.test(word) && word.length <= capacity))];
+  return [
+    ...new Set(
+      words
+        .map((word) => word.trim().toUpperCase())
+        .filter((word) => /^[A-Z]+$/.test(word) && word.length <= capacity),
+    ),
+  ];
 }
 
 export function generateBoard(options: GenerateBoardOptions): GeneratedBoard {
@@ -192,7 +196,10 @@ export function generateBoard(options: GenerateBoardOptions): GeneratedBoard {
   const candidates = [...words];
   for (let index = candidates.length - 1; index > 0; index -= 1) {
     const swapIndex = randomIndex(index + 1, random);
-    [candidates[index], candidates[swapIndex]] = [candidates[swapIndex]!, candidates[index]!];
+    [candidates[index], candidates[swapIndex]] = [
+      candidates[swapIndex]!,
+      candidates[index]!,
+    ];
   }
   const targetWords: string[] = [];
   let usedCells = 0;
@@ -218,9 +225,20 @@ export function generateBoard(options: GenerateBoardOptions): GeneratedBoard {
     pickWeightedLetter(random, weights),
   );
 
-  targetPaths.forEach((path, wordIndex) => path.forEach(({ row, column }, letterIndex) => {
-    cells[row * size + column] = targetWords[wordIndex]![letterIndex] as Letter;
-  }));
+  targetPaths.forEach((path, wordIndex) =>
+    path.forEach(({ row, column }, letterIndex) => {
+      cells[row * size + column] = targetWords[wordIndex]![
+        letterIndex
+      ] as Letter;
+    }),
+  );
 
-  return { size, cells, guaranteedWord, guaranteedPath, targetWords, targetPaths };
+  return {
+    size,
+    cells,
+    guaranteedWord,
+    guaranteedPath,
+    targetWords,
+    targetPaths,
+  };
 }
